@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>あまと整体院 売上管理</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; background-color: #f5f5f5; color: #333; }
+    .app { display: flex; flex-direction: column; min-height: 100vh; }
+    .header { background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%); color: white; padding: 20px 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .header h1 { font-size: 24px; font-weight: 600; margin-bottom: 4px; }
+    .header .subtitle { font-size: 14px; opacity: 0.9; }
+    .message { position: fixed; top: 80px; left: 16px; right: 16px; padding: 12px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; text-align: center; z-index: 200; animation: slideIn 0.3s ease-out; }
+    .message.success { background-color: #4caf50; color: white; }
+    .message.error { background-color: #f44336; color: white; }
+    @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .nav-tabs { display: flex; background-color: white; border-bottom: 1px solid #e0e0e0; }
+    .nav-btn { flex: 1; padding: 12px 16px; border: none; background: none; color: #666; font-size: 14px; font-weight: 500; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.3s ease; }
+    .nav-btn.active { color: #1a237e; border-bottom-color: #1a237e; }
+    .home-page, .history-page { flex: 1; padding: 16px; overflow-y: auto; }
+    .stats-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .stats-date { font-size: 12px; color: #999; margin-bottom: 12px; text-align: center; }
+    .stats-main { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .stat-item { padding: 12px; border-radius: 8px; text-align: center; }
+    .stat-item.total { background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%); color: white; grid-column: 1 / -1; }
+    .stat-item.total .label { display: block; font-size: 12px; opacity: 0.9; margin-bottom: 4px; }
+    .stat-item.total .value { display: block; font-size: 28px; font-weight: 700; }
+    .stat-item.count { background-color: #e3f2fd; color: #0d47a1; }
+    .stat-item .label { display: block; font-size: 11px; opacity: 0.8; margin-bottom: 4px; font-weight: 500; }
+    .stat-item .value { display: block; font-size: 20px; font-weight: 700; }
+    .stats-breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1px solid #f0f0f0; padding-top: 16px; }
+    .breakdown-item { padding: 12px; border-radius: 8px; text-align: center; }
+    .breakdown-item.shinki { background-color: #fff3e0; }
+    .breakdown-item.joren { background-color: #f3e5f5; }
+    .breakdown-item .label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+    .breakdown-item.shinki .label { color: #f57c00; }
+    .breakdown-item.joren .label { color: #7b1fa2; }
+    .breakdown-item .count { display: block; font-size: 16px; font-weight: 600; color: #333; margin-bottom: 4px; }
+    .breakdown-item .amount { display: block; font-size: 14px; font-weight: 500; color: #666; }
+    .sales-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .btn { padding: 20px; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.12); min-height: 100px; }
+    .btn:active { transform: scale(0.98); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-shinki { background: linear-gradient(135deg, #f57c00 0%, #e65100 100%); }
+    .btn-joren { background: linear-gradient(135deg, #7b1fa2 0%, #4a148c 100%); }
+    .btn-label { font-size: 16px; font-weight: 700; }
+    .btn-price { font-size: 18px; font-weight: 700; opacity: 0.95; }
+    .loading { text-align: center; padding: 20px; color: #666; font-size: 14px; }
+    .placeholder { background: white; border-radius: 12px; padding: 40px 20px; text-align: center; margin-top: 20px; }
+    .placeholder p { margin: 12px 0; color: #666; font-size: 14px; }
+    .footer { background-color: white; border-top: 1px solid #e0e0e0; padding: 12px; text-align: center; color: #999; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>あまと整体院</h1>
+      <p class="subtitle">売上管理</p>
+    </header>
+
+    <div id="message" class="message" style="display:none;"></div>
+
+    <nav class="nav-tabs">
+      <button class="nav-btn active" data-page="home">ホーム</button>
+      <button class="nav-btn" data-page="history">履歴</button>
+    </nav>
+
+    <div id="home-page" class="home-page" style="display:block;">
+      <div class="stats-card">
+        <div class="stats-date" id="stats-date"></div>
+
+        <div class="stats-main">
+          <div class="stat-item total">
+            <span class="label">本日売上</span>
+            <span class="value" id="total-sales">¥0</span>
+          </div>
+          <div class="stat-item count">
+            <span class="label">件数</span>
+            <span class="value" id="total-count">0件</span>
+          </div>
+        </div>
+
+        <div class="stats-breakdown">
+          <div class="breakdown-item shinki">
+            <span class="label">新規</span>
+            <span class="count" id="shinki-count">0件</span>
+            <span class="amount" id="shinki-sales">¥0</span>
+          </div>
+          <div class="breakdown-item joren">
+            <span class="label">常連</span>
+            <span class="count" id="joren-count">0件</span>
+            <span class="amount" id="joren-sales">¥0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sales-buttons">
+        <button class="btn btn-shinki" id="btn-shinki">
+          <span class="btn-label">新規</span>
+          <span class="btn-price">¥3,270</span>
+        </button>
+
+        <button class="btn btn-joren" id="btn-joren">
+          <span class="btn-label">常連</span>
+          <span class="btn-price">¥5,500</span>
+        </button>
+      </div>
+
+      <div id="loading" class="loading" style="display:none;">処理中...</div>
+    </div>
+
+    <div id="history-page" class="history-page" style="display:none;">
+      <div class="placeholder">
+        <p>📊 履歴画面は準備中です</p>
+        <p>今後、以下の機能を追加予定：</p>
+        <ul style="list-style:none; margin:16px 0; padding:0; text-align:left; display:inline-block;">
+          <li style="padding:6px 0; color:#999; font-size:13px;">• 日別の詳細内訳</li>
+          <li style="padding:6px 0; color:#999; font-size:13px;">• 前月比・前年比</li>
+          <li style="padding:6px 0; color:#999; font-size:13px;">• 月別グラフ</li>
+        </ul>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p>v2.0</p>
+    </footer>
+  </div>
+
+  <script>
+    // GAS WebApp URL （デプロイ後に変更）
+    const GAS_URL = 'あなたのデプロイURLをここに入れてください';
+
+    let currentPage = 'home';
+
+    // ナビゲーション
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentPage = btn.dataset.page;
+        document.getElementById('home-page').style.display = currentPage === 'home' ? 'block' : 'none';
+        document.getElementById('history-page').style.display = currentPage === 'history' ? 'block' : 'none';
+      });
+    });
+
+    // 本日の統計を取得
+    async function fetchTodayStats() {
+      try {
+        const response = await fetch(`${GAS_URL}?action=getTodayStats`);
+        const data = await response.json();
+        
+        const today = new Date();
+        document.getElementById('stats-date').textContent = `${today.getMonth()+1}月${today.getDate()}日`;
+        document.getElementById('total-sales').textContent = `¥${data.totalSales.toLocaleString('ja-JP')}`;
+        document.getElementById('total-count').textContent = `${data.totalCount}件`;
+        document.getElementById('shinki-count').textContent = `${data.shinkiCount}件`;
+        document.getElementById('shinki-sales').textContent = `¥${data.shinkiSales.toLocaleString('ja-JP')}`;
+        document.getElementById('joren-count').textContent = `${data.jorenCount}件`;
+        document.getElementById('joren-sales').textContent = `¥${data.jorenSales.toLocaleString('ja-JP')}`;
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+
+    // 売上を記録
+    async function addSale(type, amount) {
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('btn-shinki').disabled = true;
+      document.getElementById('btn-joren').disabled = true;
+
+      try {
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'addSale',
+            type: type,
+            amount: amount
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showMessage(`✓ ${type} ¥${amount.toLocaleString('ja-JP')} を登録しました`, 'success');
+          await fetchTodayStats();
+        } else {
+          showMessage(`✗ エラー: ${result.message}`, 'error');
+        }
+      } catch (error) {
+        showMessage('✗ 通信エラーが発生しました', 'error');
+        console.error('Error:', error);
+      } finally {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('btn-shinki').disabled = false;
+        document.getElementById('btn-joren').disabled = false;
+      }
+    }
+
+    // メッセージ表示
+    function showMessage(msg, type) {
+      const el = document.getElementById('message');
+      el.textContent = msg;
+      el.className = `message ${type}`;
+      el.style.display = 'block';
+      setTimeout(() => {
+        el.style.display = 'none';
+      }, 3000);
+    }
+
+    // ボタンイベント
+    document.getElementById('btn-shinki').addEventListener('click', () => addSale('新規', 3270));
+    document.getElementById('btn-joren').addEventListener('click', () => addSale('常連', 5500));
+
+    // 初期化
+    fetchTodayStats();
+    setInterval(fetchTodayStats, 30000);
+  </script>
+</body>
+</html>
