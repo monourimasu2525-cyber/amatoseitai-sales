@@ -572,10 +572,7 @@
     btn.textContent = '更新中...';
     showMessage('⏳ 集計シート更新中...', 'info');
     try {
-      const res = await fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'updateSummary' })
-      });
+      const res = await fetch(`${GAS_URL}?action=updateSummary`);
       const result = await res.json();
       showMessage(result.success ? '✓ ' + result.message : '✗ ' + result.message, result.success ? 'success' : 'error');
     } catch (e) {
@@ -595,10 +592,7 @@
     btn.textContent = '生成中...';
     showMessage('⏳ 経理シート生成中...', 'info');
     try {
-      const res = await fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'generateAccounting', year: y, month: m })
-      });
+      const res = await fetch(`${GAS_URL}?action=generateAccounting&year=${y}&month=${m}`);
       const result = await res.json();
       showMessage(result.success ? '✓ ' + result.message : '✗ ' + result.message, result.success ? 'success' : 'error');
     } catch (e) {
