@@ -161,6 +161,156 @@ function setupDailyBackupTrigger() {
     .create();
 }
 
+// ========== 集計シート書き込み ==========
+
+function updateSummarySheet() {
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var summarySheet = ss.getSheetByName('集計');
+    if (!summarySheet) {
+      summarySheet = ss.insertSheet('集計');
+    }
+
+    var now = new Date();
+    var headers = ['年月', '新規件数', '新規売上', '常連件数', '常連売上', '合計件数', '合計売上'];
+    var rows = [headers];
+
+    for (var i = 11; i >= 0; i--) {
+      var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      var y = d.getFullYear();
+      var m = d.getMonth() + 1;
+      var manager = new SalesManager(SPREADSHEET_ID);
+      var stats = manager.getMonthStats(y, m);
+      rows.push([
+        y + '年' + m + '月',
+        stats.shinkiCount,
+        stats.shinkiSales,
+        stats.jorenCount,
+        stats.jorenSales,
+        stats.totalCount,
+        stats.totalSales
+      ]);
+    }
+
+    var range = summarySheet.getRange(1, 1, rows.length, headers.length);
+    range.setValues(rows);
+
+    // ヘッダー行の書式設定
+    var headerRange = summarySheet.getRange(1, 1, 1, headers.length);
+    headerRange.setBackground('#1a237e');
+    headerRange.setFontColor('#ffffff');
+    headerRange.setFontWeight('bold');
+
+    summarySheet.autoResizeColumns(1, headers.length);
+
+    return { success: true, message: '集計シートを更新しました（過去12ヶ月）' };
+  } catch (err) {
+    return { success: false, message: '集計シート更新エラー: ' + err.message };
+  }
+}
+
+// ========== 経理シート生成 ==========
+
+function generateAccountingSheet(year, month) {
+  try {
+    year = parseInt(year);
+    month = parseInt(month);
+    if (!year || !month || month < 1 || month > 12) {
+      return { success: false, message: '年月が不正です' };
+    }
+
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheetName = '経理_' + year + '_' + String(month).padStart(2, '0');
+
+    // 既存シートがあれば削除して再作成
+    var existing = ss.getSheetByName(sheetName);
+    if (existing) {
+      ss.deleteSheet(existing);
+    }
+    var accSheet = ss.insertSheet(sheetName);
+
+    // ヘッダー
+    var headers = ['日付', '新規件数', '新規売上', '常連件数', '常連売上', '日計'];
+    accSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    var headerRange = accSheet.getRange(1, 1, 1, headers.length);
+    headerRange.setBackground('#1a237e');
+    headerRange.setFontColor('#ffffff');
+    headerRange.setFontWeight('bold');
+
+    // 売上データシートからデータ取得
+    var dataSheet = ss.getSheetByName('売上データ') || ss.getSheets()[0];
+    var lastRow = dataSheet.getLastRow();
+    var allData = lastRow >= 2 ? dataSheet.getRange(2, 1, lastRow - 1, 5).getValues() : [];
+
+    // 日別集計
+    var daysInMonth = new Date(year, month, 0).getDate();
+    var dayMap = {};
+    for (var d = 1; d <= daysInMonth; d++) {
+      dayMap[d] = { shinkiCount: 0, shinkiSales: 0, jorenCount: 0, jorenSales: 0 };
+    }
+
+    allData.forEach(function(row) {
+      if (!row[0]) return;
+      var date = new Date(row[0]);
+      if (date.getFullYear() === year && date.getMonth() + 1 === month) {
+        var day = date.getDate();
+        var amount = Number(row[3]) || 0;
+        if (row[2] === '新規') {
+          dayMap[day].shinkiCount++;
+          dayMap[day].shinkiSales += amount;
+        } else if (row[2] === '常連') {
+          dayMap[day].jorenCount++;
+          dayMap[day].jorenSales += amount;
+        }
+      }
+    });
+
+    // 行データ作成
+    var dataRows = [];
+    var totalShinki = 0, totalShinkiSales = 0, totalJoren = 0, totalJorenSales = 0;
+    for (var day = 1; day <= daysInMonth; day++) {
+      var dk = dayMap[day];
+      var dailyTotal = dk.shinkiSales + dk.jorenSales;
+      totalShinki += dk.shinkiCount;
+      totalShinkiSales += dk.shinkiSales;
+      totalJoren += dk.jorenCount;
+      totalJorenSales += dk.jorenSales;
+      dataRows.push([
+        year + '/' + String(month).padStart(2, '0') + '/' + String(day).padStart(2, '0'),
+        dk.shinkiCount,
+        dk.shinkiSales,
+        dk.jorenCount,
+        dk.jorenSales,
+        dailyTotal
+      ]);
+    }
+
+    // 月合計行
+    dataRows.push([
+      '【月合計】',
+      totalShinki,
+      totalShinkiSales,
+      totalJoren,
+      totalJorenSales,
+      totalShinkiSales + totalJorenSales
+    ]);
+
+    var dataRange = accSheet.getRange(2, 1, dataRows.length, headers.length);
+    dataRange.setValues(dataRows);
+
+    // 月合計行の書式
+    var totalRowRange = accSheet.getRange(daysInMonth + 2, 1, 1, headers.length);
+    totalRowRange.setBackground('#e8eaf6');
+    totalRowRange.setFontWeight('bold');
+
+    accSheet.autoResizeColumns(1, headers.length);
+
+    return { success: true, message: sheetName + ' を生成しました（' + daysInMonth + '日分）' };
+  } catch (err) {
+    return { success: false, message: '経理シート生成エラー: ' + err.message };
+  }
+}
+
 // ========== WebAPI ==========
 
 function doPost(e) {
@@ -173,6 +323,10 @@ function doPost(e) {
       result = manager.addSale(data.type, data.amount);
     } else if (data.action === 'backup') {
       result = runBackup();
+    } else if (data.action === 'updateSummary') {
+      result = updateSummarySheet();
+    } else if (data.action === 'generateAccounting') {
+      result = generateAccountingSheet(data.year, data.month);
     } else {
       result = { success: false, message: '不明なアクション: ' + data.action };
     }
@@ -213,6 +367,12 @@ function doGet(e) {
       return ContentService
         .createTextOutput(csv)
         .setMimeType(ContentService.MimeType.CSV);
+    } else if (action === 'updateSummary') {
+      result = updateSummarySheet();
+    } else if (action === 'generateAccounting') {
+      const year = parseInt(e.parameter.year) || new Date().getFullYear();
+      const month = parseInt(e.parameter.month) || new Date().getMonth() + 1;
+      result = generateAccountingSheet(year, month);
     } else {
       result = { success: false, message: '不明なアクション' };
     }
