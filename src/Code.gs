@@ -56,14 +56,13 @@ function doPost(e) {
     const response = ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
     
     // ✅ CORS対応
-    response.addHeader("Access-Control-Allow-Origin", "*");
-    response.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    response.addHeader("Access-Control-Allow-Headers", "Content-Type");
+    
+
     
     return response;
   } catch (err) {
     const response = ContentService.createTextOutput(JSON.stringify({ success: false, message: err.message })).setMimeType(ContentService.MimeType.JSON);
-    response.addHeader("Access-Control-Allow-Origin", "*");
+   
     return response;
   }
 }
@@ -76,14 +75,13 @@ function doGet(e) {
     const response = ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
     
     // ✅ CORS対応
-    response.addHeader("Access-Control-Allow-Origin", "*");
-    response.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    response.addHeader("Access-Control-Allow-Headers", "Content-Type");
+  
+
     
     return response;
   } catch (err) {
     const response = ContentService.createTextOutput(JSON.stringify({ success: false, message: err.message })).setMimeType(ContentService.MimeType.JSON);
-    response.addHeader("Access-Control-Allow-Origin", "*");
+
     return response;
   }
 }
