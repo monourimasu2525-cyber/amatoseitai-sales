@@ -6,7 +6,7 @@ var BACKUP_FOLDER_NAME = 'あまと整体院_売上バックアップ';
 class SalesManager {
   constructor(spreadsheetId) {
     this.ss = SpreadsheetApp.openById(spreadsheetId);
-    this.dataSheet = this.ss.getSheetByName('売上データ');
+    this.dataSheet = this.ss.getSheetByName('売上データ') || this.ss.getSheets()[0];
   }
 
   addSale(type, amount) {
@@ -193,7 +193,10 @@ function doGet(e) {
     const manager = new SalesManager(SPREADSHEET_ID);
     let result;
 
-    if (action === 'getTodayStats') {
+    if (action === 'getSheets') {
+      const sheets = manager.ss.getSheets().map(function(s) { return s.getName(); });
+      result = { sheets: sheets, dataSheetName: manager.dataSheet ? manager.dataSheet.getName() : null };
+    } else if (action === 'getTodayStats') {
       result = manager.getTodayStats();
     } else if (action === 'getMonthStats') {
       const year = parseInt(e.parameter.year) || new Date().getFullYear();
