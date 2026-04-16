@@ -171,6 +171,10 @@ function updateSummarySheet() {
       summarySheet = ss.insertSheet('集計');
     }
 
+    // シート全体をクリアしてから書き直す
+    summarySheet.clearContents();
+    summarySheet.clearFormats();
+
     var now = new Date();
     var headers = ['年月', '新規件数', '新規売上', '常連件数', '常連売上', '合計件数', '合計売上'];
     var rows = [headers];
@@ -200,6 +204,17 @@ function updateSummarySheet() {
     headerRange.setBackground('#1a237e');
     headerRange.setFontColor('#ffffff');
     headerRange.setFontWeight('bold');
+
+    // データ行の交互背景色
+    for (var r = 2; r <= rows.length; r++) {
+      var rowRange = summarySheet.getRange(r, 1, 1, headers.length);
+      rowRange.setBackground(r % 2 === 0 ? '#e8eaf6' : '#ffffff');
+    }
+
+    // 数値列を通貨フォーマット
+    summarySheet.getRange(2, 3, rows.length - 1, 1).setNumberFormat('¥#,##0');
+    summarySheet.getRange(2, 5, rows.length - 1, 1).setNumberFormat('¥#,##0');
+    summarySheet.getRange(2, 7, rows.length - 1, 1).setNumberFormat('¥#,##0');
 
     summarySheet.autoResizeColumns(1, headers.length);
 
