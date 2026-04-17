@@ -773,10 +773,18 @@ async function loadStatsAuto() {
   document.getElementById('statsLineWrap').style.display = 'none';
 
   try {
-    const [cur, prev] = await Promise.all([
-      apiGet({ action:'getMonthStats', year, month }),
-      apiGet({ action:'getMonthStats', year, month: month===1?12:month-1 })
-    ]);
+    // キャッシュからinitDataを取得（あれば即表示）
+    const cached = memGet('initData') || lsGet('initData');
+    let cur, prev;
+    if (cached && cached.thisMonth && cached.prevMonth) {
+      cur = cached.thisMonth;
+      prev = cached.prevMonth;
+    } else {
+      [cur, prev] = await Promise.all([
+        apiGet({ action:'getMonthStats', year, month }),
+        apiGet({ action:'getMonthStats', year, month: month===1?12:month-1 })
+      ]);
+    }
 
     // ① まとめカード
     document.getElementById('statsTotalSales').textContent = fmt(cur.totalSales);
@@ -884,11 +892,21 @@ function renderInsightGrid(cur, prev, unitPrice) {
 // ===== 集計ラインチャート =====
 async function loadStatsLineChart(year, month, cur) {
   try {
-    const d = await apiGet({ action:'getRecentHistory', days:45 });
-    const records = (d.records||[]).filter(r => {
-      const p = r.date.split('/');
-      return parseInt(p[0])===year && parseInt(p[1])===month;
-    });
+    // キャッシュのhistoryを優先使用
+    const cached = memGet('initData') || lsGet('initData');
+    let records = [];
+    if (cached && cached.history && cached.history.records) {
+      records = cached.history.records.filter(r => {
+        const p = r.date.split('/');
+        return parseInt(p[0])===year && parseInt(p[1])===month;
+      });
+    } else {
+      const d = await apiGet({ action:'getRecentHistory', days:45 });
+      records = (d.records||[]).filter(r => {
+        const p = r.date.split('/');
+        return parseInt(p[0])===year && parseInt(p[1])===month;
+      });
+    }
     // 日別集計
     const dayMap = {};
     records.forEach(r => {
