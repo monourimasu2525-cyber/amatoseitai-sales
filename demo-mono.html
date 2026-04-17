@@ -10,9 +10,9 @@
     --bg:       #f2f3f5;
     --card:     #ffffff;
     --card2:    #f6f7f8;
-    --accent:   #4a5260;
-    --accent2:  #5a6272;
-    --accent-l: #ebebed;
+    --accent:   #6b7280;
+    --accent2:  #7d8694;
+    --accent-l: #f0f1f3;
     --border:   #e0e2e6;
     --text:     #2e3238;
     --sub:      #909499;
@@ -344,8 +344,8 @@ for(let i=0;i<30;i++){
 let trendChartObj = null;
 function buildGrad(ctx, h) {
   const g = ctx.createLinearGradient(0,0,0,h);
-  g.addColorStop(0,'rgba(74,82,96,0.12)');
-  g.addColorStop(1,'rgba(74,82,96,0.01)');
+  g.addColorStop(0,'rgba(107,114,128,0.12)');
+  g.addColorStop(1,'rgba(107,114,128,0.01)');
   return g;
 }
 function renderTrend(period) {
@@ -359,12 +359,12 @@ function renderTrend(period) {
       labels,
       datasets: [{
         data,
-        borderColor: '#4a5260',
+        borderColor: '#6b7280',
         backgroundColor: buildGrad(ctx, 150),
         fill: true,
         tension: 0,
         pointRadius: period <= 10 ? 4 : 3,
-        pointBackgroundColor: '#4a5260',
+        pointBackgroundColor: '#6b7280',
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
         borderWidth: 2.5,
@@ -374,7 +374,7 @@ function renderTrend(period) {
       responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: { backgroundColor:'#4a5260', callbacks: { label: c => '¥'+Number(c.raw).toLocaleString() } }
+        tooltip: { backgroundColor:'#6b7280', callbacks: { label: c => '¥'+Number(c.raw).toLocaleString() } }
       },
       scales: {
         x: { grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:10},color:'#a0b0bc', maxTicksLimit: period<=7?7:period<=15?8:10} },
@@ -388,7 +388,7 @@ renderTrend(7);
 function setPeriodDemo(p) {
   [7,15,30].forEach(n=>{
     const b = document.getElementById('pbtn'+n);
-    if(n===p){ b.style.background='#4a5260'; b.style.color='#fff'; }
+    if(n===p){ b.style.background='#6b7280'; b.style.color='#fff'; }
     else { b.style.background='#eaecef'; b.style.color='#8896a4'; }
   });
   renderTrend(p);
@@ -402,13 +402,13 @@ new Chart(mCtx, {
     labels: ['新規','常連'],
     datasets: [{
       data: [52320, 38500],
-      backgroundColor: ['#4a5260','#9ea4ad'],
+      backgroundColor: ['#6b7280','#b0b7c0'],
       borderRadius: 10,
     }]
   },
   options: {
     responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#4a5260', callbacks:{label:c=>'¥'+Number(c.raw).toLocaleString()} } },
+    plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#6b7280', callbacks:{label:c=>'¥'+Number(c.raw).toLocaleString()} } },
     scales:{
       x:{grid:{display:false},ticks:{color:'#a0b0bc'}},
       y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.05)'},ticks:{color:'#a0b0bc',callback:v=>(v/10000).toFixed(0)+'万'}}
