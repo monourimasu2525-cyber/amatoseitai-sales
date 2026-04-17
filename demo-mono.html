@@ -9,15 +9,15 @@
   :root {
     --bg:       #f0f2f4;
     --card:     #ffffff;
-    --card2:    #f5f6f8;
-    --accent:   #1e2c3a;
-    --accent2:  #2d3f52;
-    --accent-l: #eaecef;
-    --border:   #e2e6ea;
-    --text:     #1a1f28;
+    --card2:    #f5f7f9;
+    --accent:   #3d5a7a;
+    --accent2:  #4a6d8c;
+    --accent-l: #e8eef4;
+    --border:   #dde3ea;
+    --text:     #2c3a48;
     --sub:      #8896a4;
     --sub2:     #b0bac4;
-    --line:     #3d5166;
+    --line:     #3d5a7a;
   }
   * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; margin:0; padding:0; }
   body {
@@ -344,8 +344,8 @@ for(let i=0;i<30;i++){
 let trendChartObj = null;
 function buildGrad(ctx, h) {
   const g = ctx.createLinearGradient(0,0,0,h);
-  g.addColorStop(0,'rgba(30,44,58,0.12)');
-  g.addColorStop(1,'rgba(30,44,58,0.01)');
+  g.addColorStop(0,'rgba(61,90,122,0.13)');
+  g.addColorStop(1,'rgba(61,90,122,0.01)');
   return g;
 }
 function renderTrend(period) {
@@ -359,12 +359,12 @@ function renderTrend(period) {
       labels,
       datasets: [{
         data,
-        borderColor: '#1e2c3a',
+        borderColor: '#3d5a7a',
         backgroundColor: buildGrad(ctx, 150),
         fill: true,
         tension: 0,
         pointRadius: period <= 10 ? 4 : 3,
-        pointBackgroundColor: '#1e2c3a',
+        pointBackgroundColor: '#3d5a7a',
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
         borderWidth: 2.5,
@@ -374,7 +374,7 @@ function renderTrend(period) {
       responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: { backgroundColor:'#1e2c3a', callbacks: { label: c => '¥'+Number(c.raw).toLocaleString() } }
+        tooltip: { backgroundColor:'#3d5a7a', callbacks: { label: c => '¥'+Number(c.raw).toLocaleString() } }
       },
       scales: {
         x: { grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:10},color:'#a0b0bc', maxTicksLimit: period<=7?7:period<=15?8:10} },
@@ -388,7 +388,7 @@ renderTrend(7);
 function setPeriodDemo(p) {
   [7,15,30].forEach(n=>{
     const b = document.getElementById('pbtn'+n);
-    if(n===p){ b.style.background='#1e2c3a'; b.style.color='#fff'; }
+    if(n===p){ b.style.background='#3d5a7a'; b.style.color='#fff'; }
     else { b.style.background='#eaecef'; b.style.color='#8896a4'; }
   });
   renderTrend(p);
@@ -402,13 +402,13 @@ new Chart(mCtx, {
     labels: ['新規','常連'],
     datasets: [{
       data: [52320, 38500],
-      backgroundColor: ['#1e2c3a','#8896a4'],
+      backgroundColor: ['#3d5a7a','#8aa4be'],
       borderRadius: 10,
     }]
   },
   options: {
     responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#1e2c3a', callbacks:{label:c=>'¥'+Number(c.raw).toLocaleString()} } },
+    plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#3d5a7a', callbacks:{label:c=>'¥'+Number(c.raw).toLocaleString()} } },
     scales:{
       x:{grid:{display:false},ticks:{color:'#a0b0bc'}},
       y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.05)'},ticks:{color:'#a0b0bc',callback:v=>(v/10000).toFixed(0)+'万'}}
