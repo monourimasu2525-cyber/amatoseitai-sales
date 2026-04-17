@@ -257,40 +257,150 @@
   </div>
 </div>
 
-<!-- ===== 集計 ===== -->
+<!-- ===== 集計（レポート画面） ===== -->
 <div id="page-stats" class="page" style="padding-bottom:72px;">
   <div style="max-width:480px;margin:0 auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px;">
-    <div class="card" style="padding:14px 16px;">
-      <div style="display:flex;gap:8px;align-items:center;">
-        <select style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text);outline:none;"><option>2026年</option></select>
-        <select style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text);outline:none;"><option>4月</option></select>
-        <button class="btn-primary" style="margin-left:auto;padding:8px 16px;font-size:13px;">表示</button>
+
+    <!-- ① 今月のまとめ：開いた瞬間に答えが出る -->
+    <div style="background:var(--accent);border-radius:14px;padding:20px 18px;box-shadow:0 2px 8px rgba(30,44,58,0.18);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-size:11px;color:rgba(255,255,255,0.55);font-weight:500;">2026年4月 — 今月</span>
+        <span id="statsMonthBadge" style="font-size:10px;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);padding:2px 8px;border-radius:20px;">自動更新</span>
+      </div>
+      <!-- 売上メイン数値 -->
+      <div style="font-size:34px;font-weight:800;color:#fff;letter-spacing:-1px;line-height:1.1;margin-bottom:6px;">¥90,820</div>
+      <!-- 指標行 -->
+      <div style="display:flex;gap:16px;margin-bottom:14px;">
+        <div>
+          <span style="font-size:11px;color:rgba(255,255,255,0.5);">先月比</span>
+          <span style="font-size:13px;font-weight:700;color:#6ee7b7;margin-left:4px;">▲12%</span>
+        </div>
+        <div>
+          <span style="font-size:11px;color:rgba(255,255,255,0.5);">件数</span>
+          <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.9);margin-left:4px;">23件</span>
+        </div>
+        <div>
+          <span style="font-size:11px;color:rgba(255,255,255,0.5);">客単価</span>
+          <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.9);margin-left:4px;">¥3,949</span>
+        </div>
+      </div>
+      <!-- 一言サマリー -->
+      <div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:10px 12px;border:1px solid rgba(255,255,255,0.12);">
+        <span style="font-size:12px;color:rgba(255,255,255,0.5);margin-right:6px;">💡</span>
+        <span id="statsSummaryText" style="font-size:13px;color:rgba(255,255,255,0.9);font-weight:500;">今月は先月より好調です。新規比率が高く、獲得が順調です。</span>
       </div>
     </div>
 
-    <!-- KPI 3枚：数値最優先 -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-      <div class="card" style="padding:12px 10px;text-align:center;">
-        <div style="font-size:10px;color:var(--sub2);margin-bottom:4px;font-weight:500;">新規</div>
-        <div style="font-size:15px;font-weight:700;color:var(--text);letter-spacing:-0.3px;">¥52,320</div>
-        <div style="font-size:10px;color:var(--sub2);margin-top:3px;">16件</div>
-      </div>
-      <div class="card" style="padding:12px 10px;text-align:center;">
-        <div style="font-size:10px;color:var(--sub2);margin-bottom:4px;font-weight:500;">常連</div>
-        <div style="font-size:15px;font-weight:700;color:var(--text);letter-spacing:-0.3px;">¥38,500</div>
-        <div style="font-size:10px;color:var(--sub2);margin-top:3px;">7件</div>
-      </div>
-      <div class="card" style="padding:12px 10px;text-align:center;border:1px solid var(--accent-m);">
-        <div style="font-size:10px;color:var(--sub2);margin-bottom:4px;font-weight:500;">合計</div>
-        <div style="font-size:15px;font-weight:800;color:var(--accent);letter-spacing:-0.3px;">¥90,820</div>
-        <div style="font-size:10px;color:var(--sub2);margin-top:3px;">23件</div>
-      </div>
-    </div>
-
+    <!-- ② 売上推移グラフ＋傾向テキスト -->
     <div class="card" style="padding:16px;">
-      <div style="font-size:12px;font-weight:600;color:var(--sub);margin-bottom:12px;">月内訳</div>
-      <div style="height:180px;"><canvas id="monthChart"></canvas></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-size:13px;font-weight:700;color:var(--text);">売上の流れ</span>
+        <span style="font-size:11px;color:var(--sub2);">今月 日別</span>
+      </div>
+      <!-- 傾向テキスト -->
+      <div style="font-size:12px;color:var(--sub);margin-bottom:12px;padding:8px 10px;background:var(--card2);border-radius:8px;border-left:3px solid var(--accent);">
+        月後半に売上が伸びています。後半の勢いを来月も維持できると安定します。
+      </div>
+      <div style="height:140px;"><canvas id="statsLineChart"></canvas></div>
     </div>
+
+    <!-- ③ 気づきカード：数値より意味が先 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+
+      <!-- 新規 -->
+      <div class="card" style="padding:14px;">
+        <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:4px;">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;"></span>
+          新規が強い
+        </div>
+        <div style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.5px;">¥52,320</div>
+        <div style="font-size:11px;color:var(--sub2);margin-top:3px;">16件 · 構成比 58%</div>
+        <div style="margin-top:8px;height:4px;background:var(--border);border-radius:4px;">
+          <div style="width:58%;height:100%;background:var(--accent);border-radius:4px;"></div>
+        </div>
+      </div>
+
+      <!-- 常連 -->
+      <div class="card" style="padding:14px;">
+        <div style="font-size:11px;font-weight:600;color:var(--sub);margin-bottom:6px;display:flex;align-items:center;gap:4px;">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--sub2);display:inline-block;"></span>
+          常連は少なめ
+        </div>
+        <div style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.5px;">¥38,500</div>
+        <div style="font-size:11px;color:var(--sub2);margin-top:3px;">7件 · 構成比 42%</div>
+        <div style="margin-top:8px;height:4px;background:var(--border);border-radius:4px;">
+          <div style="width:42%;height:100%;background:var(--sub2);border-radius:4px;"></div>
+        </div>
+      </div>
+
+      <!-- 売上の山 -->
+      <div class="card" style="padding:14px;">
+        <div style="font-size:11px;font-weight:600;color:var(--sub);margin-bottom:6px;display:flex;align-items:center;gap:4px;">
+          <span style="font-size:13px;">📈</span>
+          売上の山は第3週
+        </div>
+        <div style="font-size:18px;font-weight:800;color:var(--text);letter-spacing:-0.5px;">¥28,600</div>
+        <div style="font-size:11px;color:var(--sub2);margin-top:3px;">4/15〜4/21 最高週</div>
+      </div>
+
+      <!-- 客単価 -->
+      <div class="card" style="padding:14px;">
+        <div style="font-size:11px;font-weight:600;color:var(--sub);margin-bottom:6px;display:flex;align-items:center;gap:4px;">
+          <span style="font-size:13px;">💰</span>
+          客単価は安定
+        </div>
+        <div style="font-size:18px;font-weight:800;color:var(--text);letter-spacing:-0.5px;">¥3,949</div>
+        <div style="font-size:11px;color:var(--sub2);margin-top:3px;">先月 ¥3,820 · +3%</div>
+      </div>
+
+    </div>
+
+    <!-- ④ 詳細操作（折りたたみ） -->
+    <div class="card" style="overflow:hidden;">
+      <button onclick="toggleDetail()" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:none;border:none;cursor:pointer;">
+        <span style="font-size:13px;font-weight:600;color:var(--sub);">期間変更・詳細データ</span>
+        <span id="detailArrow" style="font-size:12px;color:var(--sub2);">▼</span>
+      </button>
+      <div id="detailPanel" style="display:none;padding:0 16px 16px;border-top:1px solid var(--border);">
+        <div style="display:flex;gap:8px;align-items:center;margin-top:12px;margin-bottom:12px;">
+          <select style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none;flex:1;"><option>2026年</option><option>2025年</option></select>
+          <select style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none;flex:1;">
+            <option>4月</option><option>3月</option><option>2月</option><option>1月</option>
+          </select>
+          <button class="btn-primary" style="padding:7px 14px;font-size:13px;flex-shrink:0;">表示</button>
+        </div>
+        <!-- 日別明細 -->
+        <div style="font-size:12px;font-weight:600;color:var(--sub);margin-bottom:8px;">日別明細</div>
+        <div style="font-size:12px;">
+          <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+            <span style="color:var(--sub2);">4/17（木）</span>
+            <span style="font-weight:600;color:var(--text);">¥16,040</span>
+            <span style="color:var(--sub2);">4件</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+            <span style="color:var(--sub2);">4/16（水）</span>
+            <span style="font-weight:600;color:var(--text);">¥9,810</span>
+            <span style="color:var(--sub2);">3件</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+            <span style="color:var(--sub2);">4/15（火）</span>
+            <span style="font-weight:600;color:var(--text);">¥13,040</span>
+            <span style="color:var(--sub2);">4件</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:7px 0;">
+            <span style="color:var(--sub2);">4/14（月）</span>
+            <span style="font-weight:600;color:var(--text);">¥5,500</span>
+            <span style="color:var(--sub2);">1件</span>
+          </div>
+        </div>
+        <!-- 前月比較 -->
+        <div style="margin-top:14px;">
+          <div style="font-size:12px;font-weight:600;color:var(--sub);margin-bottom:8px;">前月比較</div>
+          <div style="height:120px;"><canvas id="compareChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -448,20 +558,58 @@ function setPeriodDemo(p){
   renderTrend(p);
 }
 
-// 棒グラフ：新規=グリーン、常連=グレー
-const mCtx=document.getElementById('monthChart').getContext('2d');
-new Chart(mCtx,{
-  type:'bar',
-  data:{ labels:['新規','常連'], datasets:[{ data:[52320,38500], backgroundColor:['#1e2c3a','#d1d5db'], borderRadius:8 }] },
+// 集計ページのグラフ
+const statsLineCtx = document.getElementById('statsLineChart').getContext('2d');
+const statsGrad = statsLineCtx.createLinearGradient(0,0,0,140);
+statsGrad.addColorStop(0,'rgba(30,44,58,0.12)');
+statsGrad.addColorStop(1,'rgba(30,44,58,0.01)');
+new Chart(statsLineCtx, {
+  type:'line',
+  data:{
+    labels:['4/1','4/3','4/5','4/7','4/9','4/11','4/13','4/15','4/17','4/19','4/21','4/23','4/25','4/27','4/29'],
+    datasets:[{
+      data:[3270,8770,5500,9810,3270,12540,6500,13040,16040,9810,18700,14300,11000,8500,6500],
+      borderColor:'#1e2c3a', backgroundColor:statsGrad,
+      fill:true, tension:0,
+      pointRadius:3, pointBackgroundColor:'#1e2c3a',
+      pointBorderColor:'#fff', pointBorderWidth:2, borderWidth:2.5
+    }]
+  },
   options:{
     responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#1f2937', callbacks:{label:c=>'¥'+Number(c.raw).toLocaleString()} } },
+    plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#1e2c3a', padding:8, callbacks:{label:c=>'¥'+Number(c.raw).toLocaleString()} } },
     scales:{
-      x:{ grid:{display:false}, ticks:{color:'#9ca3af'} },
-      y:{ beginAtZero:true, grid:{color:'rgba(0,0,0,0.05)'}, ticks:{color:'#9ca3af', callback:v=>(v/10000).toFixed(0)+'万'} }
+      x:{ grid:{display:false}, ticks:{font:{size:9},color:'#9ca3af', maxTicksLimit:8} },
+      y:{ beginAtZero:true, grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:9},color:'#9ca3af', callback:v=>v===0?'0':(v/10000).toFixed(1)+'万'} }
     }
   }
 });
+
+// 詳細パネル開閉
+let compareChartObj = null;
+function toggleDetail() {
+  const panel = document.getElementById('detailPanel');
+  const arrow = document.getElementById('detailArrow');
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  arrow.textContent = isOpen ? '▼' : '▲';
+  if(!isOpen) setTimeout(() => {
+    if(compareChartObj) return;
+    compareChartObj = new Chart(document.getElementById('compareChart').getContext('2d'), {
+      type:'bar',
+      data:{ labels:['2月','3月','4月'], datasets:[{ data:[72400,81200,90820], backgroundColor:['#e5e7eb','#d1d5db','#1e2c3a'], borderRadius:6 }] },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#1e2c3a', callbacks:{label:c=>'¥'+Number(c.raw).toLocaleString()} } },
+        scales:{
+          x:{ grid:{display:false}, ticks:{font:{size:10},color:'#9ca3af'} },
+          y:{ beginAtZero:true, grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:9},color:'#9ca3af', callback:v=>(v/10000).toFixed(0)+'万'} }
+        }
+      }
+    });
+  }, 50);
+}
+
 </script>
 </body>
 </html>
