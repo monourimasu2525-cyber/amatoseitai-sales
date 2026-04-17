@@ -517,10 +517,45 @@ async function loadInitData() {
   if (lsCached) applyInitData(lsCached);
   try {
     const d = await apiGet({ action:'initData' });
+    // initDataが成功し必要なキーが揃っているか確認
+    if (d && d.master && d.todayStats && d.thisMonth && d.prevMonth && d.history) {
+      lsSet('initData', d);
+      memSet('initData', d);
+      applyInitData(d);
+    } else {
+      // フォールバック：旧API並列呼び出し
+      await loadInitDataFallback(lsCached);
+    }
+  } catch(e) {
+    await loadInitDataFallback(lsCached);
+  }
+}
+
+// フォールバック：個別API並列呼び出し
+async function loadInitDataFallback(lsCached) {
+  try {
+    const now = new Date();
+    const curMonth  = now.getMonth()+1;
+    const prevMonth = curMonth===1 ? 12 : curMonth-1;
+    const prevYear  = curMonth===1 ? now.getFullYear()-1 : now.getFullYear();
+    const [master, todayStats, thisMonth, prevMonthData, history] = await Promise.all([
+      apiGet({ action:'getMaster' }),
+      apiGet({ action:'getTodayStats' }),
+      apiGet({ action:'getMonthStats', year:now.getFullYear(), month:curMonth }),
+      apiGet({ action:'getMonthStats', year:prevYear, month:prevMonth }),
+      apiGet({ action:'getRecentHistory', days:30 })
+    ]);
+    const d = {
+      master:     master.items || [],
+      todayStats,
+      thisMonth,
+      prevMonth:  prevMonthData,
+      history
+    };
     lsSet('initData', d);
     memSet('initData', d);
     applyInitData(d);
-  } catch(e) {
+  } catch(e2) {
     if (!lsCached) showToast('データ取得エラー', true);
   }
 }
