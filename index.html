@@ -2,802 +2,1108 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>あまと整体院 売上管理</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-  * { -webkit-tap-highlight-color: transparent; }
-  body { font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; }
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
-  .tab-btn.active { background-color: #4f46e5; color: white; }
-  .toast { transform: translateY(100px); opacity: 0; transition: all 0.3s ease; }
-  .toast.show { transform: translateY(0); opacity: 1; }
-  .modal { display: none; }
-  .modal.open { display: flex; }
-  .spinner { border: 3px solid #e0e7ff; border-top: 3px solid #4f46e5; border-radius: 50%; width: 28px; height: 28px; animation: spin 0.8s linear infinite; }
+  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+  body { font-family: -apple-system, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; background: #f9fafb; }
+
+  /* ---- Page transitions ---- */
+  .page { display: none; animation: fadeInUp 0.22s ease both; }
+  .page.active { display: block; }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ---- Bottom nav ---- */
+  #bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: white; border-top: 1px solid #e5e7eb;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.07); }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center;
+    padding: 8px 0; cursor: pointer; transition: color 0.15s; color: #9ca3af;
+    font-size: 10px; font-weight: 500; min-height: 52px; }
+  .nav-item.active { color: #4f46e5; }
+  .nav-item .nav-icon { font-size: 20px; margin-bottom: 2px; }
+
+  /* ---- Main content ---- */
+  #main-content { padding-bottom: calc(80px + env(safe-area-inset-bottom)); padding-top: 0; }
+
+  /* ---- Sidebar nav (PC) ---- */
+  @media (min-width: 768px) {
+    #bottom-nav { display: none !important; }
+    #sidebar-nav { display: flex; }
+    #main-content { margin-left: 220px; padding-bottom: 32px; }
+    #app-wrapper { display: flex; min-height: 100vh; }
+  }
+  #sidebar-nav {
+    display: none;
+    width: 220px; min-height: 100vh; background: white;
+    border-right: 1px solid #e5e7eb;
+    flex-direction: column; position: fixed; left: 0; top: 0; bottom: 0; z-index: 40;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.04);
+  }
+  .sidebar-logo { padding: 24px 20px 16px; border-bottom: 1px solid #f3f4f6; }
+  .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+    cursor: pointer; font-size: 14px; font-weight: 500; color: #6b7280;
+    transition: all 0.15s; border-radius: 8px; margin: 2px 10px; }
+  .sidebar-item:hover { background: #eef2ff; color: #4f46e5; }
+  .sidebar-item.active { background: #eef2ff; color: #4f46e5; }
+  .sidebar-item .s-icon { font-size: 18px; width: 24px; text-align: center; }
+
+  /* ---- Header ---- */
+  .page-header { background: white; border-bottom: 1px solid #f3f4f6; padding: 16px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+    position: sticky; top: 0; z-index: 30; }
+
+  /* ---- Cards ---- */
+  .card { background: white; border-radius: 16px; padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+
+  /* ---- Hero card ---- */
+  .hero-card { background: linear-gradient(135deg, #4f46e5 0%, #6366f1 60%, #818cf8 100%);
+    border-radius: 20px; padding: 28px 24px; color: white; position: relative; overflow: hidden; }
+  .hero-card::before { content: ''; position: absolute; top: -30px; right: -30px;
+    width: 150px; height: 150px; border-radius: 50%;
+    background: rgba(255,255,255,0.08); }
+  .hero-card::after { content: ''; position: absolute; bottom: -40px; left: -20px;
+    width: 120px; height: 120px; border-radius: 50%;
+    background: rgba(255,255,255,0.05); }
+
+  /* ---- Quick buttons ---- */
+  .quick-btn { width: 100%; height: 56px; border-radius: 12px; display: flex;
+    align-items: center; justify-content: space-between; padding: 0 20px;
+    font-weight: 600; font-size: 15px; cursor: pointer; border: none;
+    transition: transform 0.12s, box-shadow 0.12s; }
+  .quick-btn:active { transform: scale(0.96); }
+
+  /* ---- Toast ---- */
+  #toast { position: fixed; bottom: calc(80px + env(safe-area-inset-bottom) + 12px);
+    left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #1f2937; color: white; padding: 12px 20px; border-radius: 12px;
+    font-size: 14px; font-weight: 500; opacity: 0; z-index: 200;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap; box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (min-width: 768px) {
+    #toast { bottom: 24px; }
+  }
+
+  /* ---- Snackbar (undo) ---- */
+  #snackbar { position: fixed; bottom: calc(80px + env(safe-area-inset-bottom) + 12px);
+    left: 16px; right: 16px; max-width: 400px; margin: 0 auto;
+    background: #374151; color: white; border-radius: 12px;
+    padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+    opacity: 0; pointer-events: none; z-index: 200;
+    transition: opacity 0.3s; font-size: 14px; }
+  #snackbar.show { opacity: 1; pointer-events: auto; }
+  @media (min-width: 768px) { #snackbar { bottom: 24px; } }
+
+  /* ---- Modal ---- */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    z-index: 100; display: none; align-items: flex-end; justify-content: center;
+    backdrop-filter: blur(2px); }
+  .modal-overlay.open { display: flex; }
+  @media (min-width: 640px) { .modal-overlay { align-items: center; } }
+  .modal-box { background: white; border-radius: 24px 24px 0 0; width: 100%; max-width: 480px;
+    padding: 28px 24px calc(24px + env(safe-area-inset-bottom));
+    max-height: 90vh; overflow-y: auto;
+    animation: slideUp 0.3s cubic-bezier(0.34, 1.2, 0.64, 1); }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @media (min-width: 640px) {
+    .modal-box { border-radius: 24px; padding: 32px 28px;
+      animation: scaleIn 0.25s cubic-bezier(0.34, 1.2, 0.64, 1); }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+  }
+
+  /* ---- Form elements ---- */
+  .form-label { font-size: 13px; font-weight: 600; color: #6b7280; margin-bottom: 6px; display: block; }
+  .form-input, .form-select { width: 100%; border: 1.5px solid #e5e7eb; border-radius: 10px;
+    padding: 13px 14px; font-size: 16px; color: #111827; background: white;
+    transition: border-color 0.15s; outline: none; appearance: none; }
+  .form-input:focus, .form-select:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+  .form-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center; background-size: 18px;
+    padding-right: 42px; }
+
+  /* ---- Buttons ---- */
+  .btn-primary { width: 100%; height: 54px; background: #4f46e5; color: white;
+    border: none; border-radius: 12px; font-size: 16px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s; letter-spacing: 0.02em; }
+  .btn-primary:active { transform: scale(0.97); background: #4338ca; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-danger { background: #ef4444; color: white; border: none; border-radius: 10px;
+    padding: 11px 20px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .btn-danger:active { transform: scale(0.97); }
+  .btn-ghost { background: #f3f4f6; color: #374151; border: none; border-radius: 10px;
+    padding: 11px 20px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .btn-ghost:active { transform: scale(0.97); }
+
+  /* ---- Badges ---- */
+  .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 99px;
+    font-size: 12px; font-weight: 600; }
+
+  /* ---- Inline edit row ---- */
+  .edit-row { background: #f0f4ff; border-radius: 10px; padding: 12px; margin: -4px -4px; }
+
+  /* ---- History item ---- */
+  .history-item { transition: opacity 0.3s, transform 0.3s; }
+  .history-item.removing { opacity: 0; transform: translateX(20px); }
+
+  /* ---- Settings list ---- */
+  .settings-row { display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 0; border-bottom: 1px solid #f3f4f6; cursor: pointer;
+    transition: background 0.1s; }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row:active { background: #f9fafb; }
+
+  /* ---- CountUp ---- */
+  .count-target { display: inline-block; }
+
+  /* ---- Spinner ---- */
+  .spinner { width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .card-hover { transition: transform 0.15s, box-shadow 0.15s; }
-  .card-hover:active { transform: scale(0.97); }
-  .quick-btn { transition: all 0.15s; }
-  .quick-btn:active { transform: scale(0.95); }
-  .fade-in { animation: fadeIn 0.3s ease; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ---- Chart tab ---- */
+  .chart-tab-btn { padding: 8px 20px; border-radius: 99px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: none; background: #f3f4f6; color: #6b7280; transition: all 0.15s; }
+  .chart-tab-btn.active { background: #4f46e5; color: white; }
+
+  /* ---- Comparison badge ---- */
+  .cmp-badge { display: inline-flex; align-items: center; gap: 3px; border-radius: 99px;
+    padding: 4px 10px; font-size: 12px; font-weight: 700; }
+  .cmp-up { background: rgba(34,197,94,0.2); color: #16a34a; }
+  .cmp-down { background: rgba(239,68,68,0.2); color: #dc2626; }
+  .cmp-flat { background: rgba(107,114,128,0.2); color: #6b7280; }
+
+  /* ---- Month row highlight ---- */
+  .month-row-current { background: #eef2ff !important; font-weight: 700; }
+
+  /* ---- No data ---- */
+  .no-data { text-align: center; padding: 40px 20px; color: #9ca3af; font-size: 14px; }
+
+  /* ---- Loading overlay ---- */
+  #loading-overlay { position: fixed; inset: 0; background: rgba(249,250,251,0.85);
+    z-index: 500; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 16px; }
+  #loading-overlay .big-spinner { width: 48px; height: 48px;
+    border: 4px solid #e0e7ff; border-top-color: #4f46e5; border-radius: 50%;
+    animation: spin 0.8s linear infinite; }
+
+  /* Misc */
+  .section-title { font-size: 13px; font-weight: 700; color: #6b7280;
+    text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 12px; }
+  .divider { height: 1px; background: #f3f4f6; margin: 0 -20px; }
 </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body>
 
-<!-- ヘッダー -->
-<header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-30">
-  <div class="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-    <div class="flex items-center gap-2">
-      <span class="text-2xl">🏥</span>
-      <div>
-        <div class="font-bold text-base leading-tight">あまと整体院</div>
-        <div class="text-xs text-indigo-200">売上管理システム</div>
+<!-- Loading overlay -->
+<div id="loading-overlay">
+  <div class="big-spinner"></div>
+  <p class="text-sm text-gray-400">読み込み中...</p>
+</div>
+
+<!-- Toast -->
+<div id="toast">✅ 登録しました</div>
+
+<!-- Snackbar (undo) -->
+<div id="snackbar">
+  <span id="snackbar-msg">削除しました</span>
+  <button onclick="undoDelete()" style="background:#818cf8;color:white;border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;margin-left:16px;">元に戻す</button>
+</div>
+
+<div id="app-wrapper">
+  <!-- ===== Sidebar (PC) ===== -->
+  <nav id="sidebar-nav">
+    <div class="sidebar-logo">
+      <div style="font-size:22px;font-weight:800;color:#1f2937;">🏥 あまと整体院</div>
+      <div style="font-size:12px;color:#9ca3af;margin-top:4px;">売上管理システム</div>
+    </div>
+    <div style="padding:16px 0; flex:1;">
+      <div class="sidebar-item active" data-page="home"><span class="s-icon">🏠</span>ホーム</div>
+      <div class="sidebar-item" data-page="input"><span class="s-icon">➕</span>入力</div>
+      <div class="sidebar-item" data-page="stats"><span class="s-icon">📊</span>集計</div>
+      <div class="sidebar-item" data-page="settings"><span class="s-icon">⚙️</span>設定</div>
+    </div>
+  </nav>
+
+  <!-- ===== Main Content ===== -->
+  <div id="main-content" style="flex:1; min-width:0;">
+
+    <!-- ========== HOME PAGE ========== -->
+    <div id="page-home" class="page active">
+      <!-- Header -->
+      <div class="page-header">
+        <div>
+          <div style="font-size:18px;font-weight:800;color:#1f2937;">あまと整体院</div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:1px;">売上管理</div>
+        </div>
+        <div style="text-align:right;">
+          <div id="today-date" style="font-size:15px;font-weight:700;color:#374151;"></div>
+          <div id="today-day" style="font-size:11px;color:#9ca3af;"></div>
+        </div>
+      </div>
+
+      <div style="padding:16px 16px 0; max-width:640px; margin:0 auto;">
+        <!-- Hero Card -->
+        <div class="hero-card" style="margin-bottom:16px;">
+          <div style="font-size:12px;font-weight:600;opacity:0.75;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;">今日の売上</div>
+          <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;">
+            <div id="hero-amount" style="font-size:48px;font-weight:800;letter-spacing:-1px;line-height:1;">¥0</div>
+            <div style="padding-bottom:6px;">
+              <span id="hero-count" style="font-size:16px;font-weight:600;opacity:0.85;">0件</span>
+            </div>
+          </div>
+          <div style="margin-top:12px; display:flex; align-items:center; gap:10px;">
+            <span id="compare-badge" class="cmp-badge cmp-flat">— 昨日比</span>
+          </div>
+        </div>
+
+        <!-- New / Regular cards -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+          <div class="card" style="padding:16px;">
+            <div style="font-size:12px;color:#16a34a;font-weight:700;margin-bottom:8px;">🆕 新規</div>
+            <div id="new-count" style="font-size:22px;font-weight:800;color:#111827;">0件</div>
+            <div id="new-amount" style="font-size:14px;color:#16a34a;font-weight:600;margin-top:2px;">¥0</div>
+          </div>
+          <div class="card" style="padding:16px;">
+            <div style="font-size:12px;color:#2563eb;font-weight:700;margin-bottom:8px;">👥 常連</div>
+            <div id="regular-count" style="font-size:22px;font-weight:800;color:#111827;">0件</div>
+            <div id="regular-amount" style="font-size:14px;color:#2563eb;font-weight:600;margin-top:2px;">¥0</div>
+          </div>
+        </div>
+
+        <!-- Quick Input -->
+        <div class="card" style="margin-bottom:16px;">
+          <div class="section-title">タップして記録</div>
+          <div id="quick-buttons" style="display:flex;flex-direction:column;gap:10px;">
+            <div style="text-align:center;padding:20px;color:#9ca3af;font-size:14px;">
+              <div class="spinner" style="border-color:#e0e7ff;border-top-color:#4f46e5;margin:0 auto 8px;"></div>
+              読み込み中...
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's Records -->
+        <div class="card" style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div class="section-title" style="margin-bottom:0;">今日の記録</div>
+            <button onclick="switchPage('input')" style="font-size:13px;color:#4f46e5;font-weight:600;background:none;border:none;cursor:pointer;">もっと見る →</button>
+          </div>
+          <div id="today-records">
+            <div class="no-data">記録がありません</div>
+          </div>
+        </div>
       </div>
     </div>
-    <div id="headerDate" class="text-xs text-indigo-200 text-right"></div>
-  </div>
-</header>
 
-<!-- タブナビ -->
-<nav class="bg-white border-b border-indigo-100 sticky top-[60px] z-20 shadow-sm">
-  <div class="max-w-lg mx-auto flex overflow-x-auto">
-    <button class="tab-btn active flex-1 min-w-0 py-2.5 text-xs font-medium text-gray-500 flex flex-col items-center gap-0.5 hover:bg-indigo-50 transition-colors" data-tab="home">
-      <span class="text-base">🏠</span><span>ホーム</span>
-    </button>
-    <button class="tab-btn flex-1 min-w-0 py-2.5 text-xs font-medium text-gray-500 flex flex-col items-center gap-0.5 hover:bg-indigo-50 transition-colors" data-tab="input">
-      <span class="text-base">📝</span><span>入力</span>
-    </button>
-    <button class="tab-btn flex-1 min-w-0 py-2.5 text-xs font-medium text-gray-500 flex flex-col items-center gap-0.5 hover:bg-indigo-50 transition-colors" data-tab="stats">
-      <span class="text-base">📊</span><span>集計</span>
-    </button>
-    <button class="tab-btn flex-1 min-w-0 py-2.5 text-xs font-medium text-gray-500 flex flex-col items-center gap-0.5 hover:bg-indigo-50 transition-colors" data-tab="master">
-      <span class="text-base">⚙️</span><span>マスタ</span>
-    </button>
-    <button class="tab-btn flex-1 min-w-0 py-2.5 text-xs font-medium text-gray-500 flex flex-col items-center gap-0.5 hover:bg-indigo-50 transition-colors" data-tab="accounting">
-      <span class="text-base">📑</span><span>経理</span>
-    </button>
+    <!-- ========== INPUT PAGE ========== -->
+    <div id="page-input" class="page">
+      <div class="page-header">
+        <div style="font-size:18px;font-weight:800;color:#1f2937;">➕ 入力</div>
+      </div>
+      <div style="padding:16px; max-width:640px; margin:0 auto;">
+        <!-- Form Card -->
+        <div class="card" style="margin-bottom:20px;">
+          <div style="margin-bottom:16px;">
+            <label class="form-label">種別</label>
+            <select id="input-type" class="form-select" onchange="onTypeChange()">
+              <option value="">選択してください</option>
+            </select>
+          </div>
+          <div style="margin-bottom:20px;">
+            <label class="form-label">金額</label>
+            <div style="position:relative;">
+              <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;color:#6b7280;font-weight:600;">¥</span>
+              <input id="input-amount" type="number" class="form-input" placeholder="0" style="padding-left:28px;" inputmode="numeric">
+            </div>
+          </div>
+          <button id="submit-btn" class="btn-primary" onclick="submitRecord()">登録する</button>
+        </div>
+
+        <!-- History -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div style="font-size:16px;font-weight:700;color:#111827;">履歴</div>
+          <div style="font-size:12px;color:#9ca3af;">直近30件</div>
+        </div>
+        <div id="history-list">
+          <div class="no-data">履歴を読み込み中...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== STATS PAGE ========== -->
+    <div id="page-stats" class="page">
+      <div class="page-header">
+        <div style="font-size:18px;font-weight:800;color:#1f2937;">📊 集計</div>
+        <!-- Month selector -->
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button onclick="changeMonth(-1)" style="width:36px;height:36px;border-radius:50%;border:1.5px solid #e5e7eb;background:white;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;color:#374151;" aria-label="前月">‹</button>
+          <div id="stats-month-label" style="font-size:15px;font-weight:700;color:#1f2937;min-width:80px;text-align:center;"></div>
+          <button onclick="changeMonth(1)" style="width:36px;height:36px;border-radius:50%;border:1.5px solid #e5e7eb;background:white;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;color:#374151;" aria-label="翌月">›</button>
+        </div>
+      </div>
+      <div style="padding:16px; max-width:640px; margin:0 auto;">
+        <!-- Summary cards -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">
+          <div class="card" style="padding:14px;text-align:center;">
+            <div style="font-size:11px;color:#9ca3af;font-weight:600;margin-bottom:6px;">合計</div>
+            <div id="stats-total" style="font-size:18px;font-weight:800;color:#4f46e5;">¥0</div>
+          </div>
+          <div class="card" style="padding:14px;text-align:center;">
+            <div style="font-size:11px;color:#9ca3af;font-weight:600;margin-bottom:6px;">新規</div>
+            <div id="stats-new" style="font-size:18px;font-weight:800;color:#16a34a;">¥0</div>
+          </div>
+          <div class="card" style="padding:14px;text-align:center;">
+            <div style="font-size:11px;color:#9ca3af;font-weight:600;margin-bottom:6px;">常連</div>
+            <div id="stats-reg" style="font-size:18px;font-weight:800;color:#2563eb;">¥0</div>
+          </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="card" style="margin-bottom:16px;">
+          <div style="display:flex;gap:8px;margin-bottom:16px;">
+            <button id="chart-tab-monthly" class="chart-tab-btn active" onclick="switchChartTab('monthly')">月内訳</button>
+            <button id="chart-tab-yearly" class="chart-tab-btn" onclick="switchChartTab('yearly')">12ヶ月</button>
+          </div>
+          <div id="chart-monthly-wrap" style="position:relative;height:220px;">
+            <canvas id="chart-monthly"></canvas>
+          </div>
+          <div id="chart-yearly-wrap" style="display:none;position:relative;height:220px;">
+            <canvas id="chart-yearly"></canvas>
+          </div>
+        </div>
+
+        <!-- 12-month table -->
+        <div class="card">
+          <div class="section-title">月次サマリー</div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead>
+                <tr style="color:#9ca3af;font-weight:700;">
+                  <th style="text-align:left;padding:8px 4px;border-bottom:2px solid #f3f4f6;">年月</th>
+                  <th style="text-align:right;padding:8px 4px;border-bottom:2px solid #f3f4f6;">新規</th>
+                  <th style="text-align:right;padding:8px 4px;border-bottom:2px solid #f3f4f6;">常連</th>
+                  <th style="text-align:right;padding:8px 4px;border-bottom:2px solid #f3f4f6;">合計</th>
+                </tr>
+              </thead>
+              <tbody id="monthly-table-body">
+                <tr><td colspan="4" class="no-data">読み込み中...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== SETTINGS PAGE ========== -->
+    <div id="page-settings" class="page">
+      <div class="page-header">
+        <div style="font-size:18px;font-weight:800;color:#1f2937;">⚙️ 設定</div>
+      </div>
+      <div style="padding:16px; max-width:640px; margin:0 auto;">
+
+        <!-- Master section -->
+        <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">売上マスタ</div>
+        <div class="card" style="margin-bottom:20px;">
+          <div id="master-list">
+            <div class="no-data">読み込み中...</div>
+          </div>
+          <div class="divider" style="margin:12px -20px;"></div>
+          <button onclick="openAddMasterModal()" style="width:100%;height:48px;border:1.5px dashed #d1d5db;border-radius:10px;background:white;color:#4f46e5;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s;">
+            <span>＋</span><span>新しい種別を追加</span>
+          </button>
+        </div>
+
+        <!-- Accounting section -->
+        <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">経理シート生成</div>
+        <div class="card" style="margin-bottom:20px;">
+          <div style="display:flex;gap:12px;margin-bottom:16px;">
+            <div style="flex:1;">
+              <label class="form-label">年</label>
+              <select id="accounting-year" class="form-select"></select>
+            </div>
+            <div style="flex:1;">
+              <label class="form-label">月</label>
+              <select id="accounting-month" class="form-select"></select>
+            </div>
+          </div>
+          <button id="accounting-btn" class="btn-primary" onclick="generateAccountingSheet()" style="margin-bottom:12px;">生成する</button>
+          <div id="accounting-result" style="display:none;padding:12px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;">
+            <a id="accounting-link" href="#" target="_blank" style="color:#15803d;font-weight:700;font-size:14px;text-decoration:none;">
+              📊 スプレッドシートを開く →
+            </a>
+          </div>
+        </div>
+
+        <!-- Backup section -->
+        <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">バックアップ</div>
+        <div class="card" style="margin-bottom:20px;">
+          <div style="margin-bottom:14px;">
+            <div style="font-size:13px;color:#6b7280;margin-bottom:4px;">最終バックアップ</div>
+            <div id="last-backup" style="font-size:14px;font-weight:600;color:#374151;">—</div>
+          </div>
+          <button id="backup-btn" class="btn-primary" onclick="doBackup()">今すぐバックアップ</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /#main-content -->
+</div><!-- /#app-wrapper -->
+
+<!-- ===== Bottom Nav (Mobile) ===== -->
+<nav id="bottom-nav">
+  <div style="display:flex;">
+    <div class="nav-item active" data-page="home"><div class="nav-icon">🏠</div><span>ホーム</span></div>
+    <div class="nav-item" data-page="input"><div class="nav-icon">➕</div><span>入力</span></div>
+    <div class="nav-item" data-page="stats"><div class="nav-icon">📊</div><span>集計</span></div>
+    <div class="nav-item" data-page="settings"><div class="nav-icon">⚙️</div><span>設定</span></div>
   </div>
 </nav>
 
-<main class="max-w-lg mx-auto px-4 pb-24 pt-4">
-
-<!-- ========== ホームタブ ========== -->
-<div id="tab-home" class="tab-content active fade-in">
-  <!-- 今日の売上合計 -->
-  <div class="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl p-5 text-white shadow-lg mb-4">
-    <div class="flex items-center justify-between mb-1">
-      <span class="text-sm font-medium text-indigo-200">📅 今日の売上</span>
-      <div id="homeLoadingSpinner" class="spinner hidden" style="border-color:#a5b4fc; border-top-color:white; width:18px; height:18px;"></div>
+<!-- ===== Master Add/Edit Modal ===== -->
+<div id="master-modal" class="modal-overlay">
+  <div class="modal-box">
+    <div style="font-size:18px;font-weight:800;color:#1f2937;margin-bottom:20px;" id="master-modal-title">種別を追加</div>
+    <input type="hidden" id="master-edit-id">
+    <div style="margin-bottom:14px;">
+      <label class="form-label">種別名</label>
+      <input id="master-name" type="text" class="form-input" placeholder="例：新規60分">
     </div>
-    <div id="todayTotal" class="text-4xl font-bold tracking-tight">¥—</div>
-    <div class="flex gap-4 mt-2 text-sm text-indigo-200">
-      <span id="todayCount">— 件</span>
-      <span id="todayDate" class="ml-auto text-xs"></span>
-    </div>
-    <!-- 前日比・前月比バッジ -->
-    <div class="flex gap-2 mt-3 flex-wrap">
-      <span id="badge_yesterday" class="px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white hidden"></span>
-      <span id="badge_lastmonth" class="px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white hidden"></span>
-    </div>
-  </div>
-
-  <!-- 新規/常連カード -->
-  <div class="grid grid-cols-2 gap-3 mb-4">
-    <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50 card-hover">
-      <div class="text-2xl mb-1">🆕</div>
-      <div class="text-xs text-gray-500 mb-0.5">新規</div>
-      <div id="homeShinki" class="text-2xl font-bold text-indigo-700">—</div>
-      <div id="homeShinkiCount" class="text-xs text-gray-400 mt-0.5">— 件</div>
-    </div>
-    <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50 card-hover">
-      <div class="text-2xl mb-1">👥</div>
-      <div class="text-xs text-gray-500 mb-0.5">常連</div>
-      <div id="homeJoren" class="text-2xl font-bold text-indigo-700">—</div>
-      <div id="homeJorenCount" class="text-xs text-gray-400 mt-0.5">— 件</div>
-    </div>
-  </div>
-
-  <!-- クイック入力 -->
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50 mb-4">
-    <div class="text-sm font-semibold text-gray-700 mb-3">⚡ クイック入力</div>
-    <div id="quickBtns" class="flex flex-col gap-2">
-      <div class="flex items-center justify-center py-4">
-        <div class="spinner"></div>
+    <div style="margin-bottom:14px;">
+      <label class="form-label">金額</label>
+      <div style="position:relative;">
+        <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;color:#6b7280;font-weight:600;">¥</span>
+        <input id="master-price" type="number" class="form-input" placeholder="0" style="padding-left:28px;" inputmode="numeric">
       </div>
     </div>
-  </div>
-
-  <!-- 今日の履歴（直近5件） -->
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50">
-    <div class="text-sm font-semibold text-gray-700 mb-3">🕐 今日の記録</div>
-    <div id="todayHistory" class="space-y-2 text-sm text-gray-500">読込中…</div>
-  </div>
-</div>
-
-<!-- ========== 入力タブ ========== -->
-<div id="tab-input" class="tab-content fade-in">
-  <!-- 売上入力フォーム -->
-  <div class="bg-white rounded-xl p-5 shadow-sm border border-indigo-50 mb-4">
-    <div class="text-sm font-semibold text-gray-700 mb-4">📝 売上入力</div>
-    <div class="mb-3">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">種別</label>
-      <select id="inputType" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50">
-        <option value="">読込中…</option>
-      </select>
+    <div style="margin-bottom:20px;">
+      <label class="form-label">説明（任意）</label>
+      <input id="master-desc" type="text" class="form-input" placeholder="メモなど">
     </div>
-    <div class="mb-4">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">金額（円）</label>
-      <input id="inputAmount" type="number" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50" placeholder="例: 3270">
+    <div style="display:flex;gap:10px;">
+      <button class="btn-ghost" style="flex:1;" onclick="closeMasterModal()">キャンセル</button>
+      <button id="master-save-btn" class="btn-primary" style="flex:2;height:48px;font-size:15px;" onclick="saveMaster()">保存</button>
     </div>
-    <button id="addSaleBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl py-3 font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-sm">
-      <span>✅ 登録する</span>
-    </button>
-  </div>
-
-  <!-- 直近30日の履歴 -->
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50">
-    <div class="flex items-center justify-between mb-3">
-      <div class="text-sm font-semibold text-gray-700">📋 直近30日の履歴</div>
-      <div id="historySpinner" class="spinner hidden" style="width:18px; height:18px;"></div>
-    </div>
-    <div id="historyList" class="space-y-2 text-sm">
-      <div class="text-gray-400 py-4 text-center">読込中…</div>
+    <div id="master-delete-section" style="display:none;margin-top:12px;">
+      <button class="btn-danger" style="width:100%;" onclick="deleteMasterConfirm()">この種別を削除</button>
     </div>
   </div>
-</div>
-
-<!-- ========== 集計タブ ========== -->
-<div id="tab-stats" class="tab-content fade-in">
-  <!-- 月選択 -->
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50 mb-4">
-    <div class="flex items-center gap-2">
-      <select id="statsYear" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 bg-gray-50"></select>
-      <select id="statsMonth" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 bg-gray-50"></select>
-      <button id="loadStatsBtn" class="ml-auto bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">表示</button>
-    </div>
-  </div>
-
-  <!-- 月次サマリーカード -->
-  <div id="monthSummaryCards" class="grid grid-cols-3 gap-2 mb-4">
-    <div class="bg-indigo-50 rounded-xl p-3 text-center border border-indigo-100">
-      <div class="text-xs text-gray-500 mb-1">新規</div>
-      <div id="statsShinkiSales" class="text-base font-bold text-indigo-700">—</div>
-      <div id="statsShinkiCount" class="text-xs text-gray-400">—件</div>
-    </div>
-    <div class="bg-green-50 rounded-xl p-3 text-center border border-green-100">
-      <div class="text-xs text-gray-500 mb-1">常連</div>
-      <div id="statsJorenSales" class="text-base font-bold text-green-700">—</div>
-      <div id="statsJorenCount" class="text-xs text-gray-400">—件</div>
-    </div>
-    <div class="bg-amber-50 rounded-xl p-3 text-center border border-amber-100">
-      <div class="text-xs text-gray-500 mb-1">合計</div>
-      <div id="statsTotalSales" class="text-base font-bold text-amber-700">—</div>
-      <div id="statsTotalCount" class="text-xs text-gray-400">—件</div>
-    </div>
-  </div>
-
-  <!-- 月次グラフ -->
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50 mb-4">
-    <div class="text-sm font-semibold text-gray-700 mb-3">📊 月次内訳グラフ</div>
-    <canvas id="monthChart" height="180"></canvas>
-  </div>
-
-  <!-- 過去12ヶ月トレンド -->
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50 mb-4">
-    <div class="text-sm font-semibold text-gray-700 mb-3">📈 過去12ヶ月トレンド</div>
-    <canvas id="trendChart" height="180"></canvas>
-  </div>
-
-  <!-- 月次サマリーテーブル -->
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50">
-    <div class="text-sm font-semibold text-gray-700 mb-3">🗓 月次サマリー（過去12ヶ月）</div>
-    <div id="statsSpinner" class="flex justify-center py-4 hidden"><div class="spinner"></div></div>
-    <div id="statsTable" class="overflow-x-auto">
-      <div class="text-gray-400 text-sm text-center py-4">読込中…</div>
-    </div>
-  </div>
-</div>
-
-<!-- ========== マスタタブ ========== -->
-<div id="tab-master" class="tab-content fade-in">
-  <!-- 説明 -->
-  <div class="bg-indigo-50 rounded-xl p-3 mb-4 border border-indigo-100">
-    <div class="text-xs text-indigo-700 flex items-start gap-2">
-      <span class="text-base flex-shrink-0">💡</span>
-      <span>このマスタはホームのクイック入力ボタン・入力フォームの種別選択に反映されます。</span>
-    </div>
-  </div>
-
-  <!-- マスタ一覧 -->
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50 mb-4">
-    <div class="flex items-center justify-between mb-3">
-      <div class="text-sm font-semibold text-gray-700">⚙️ 現在のマスタ</div>
-      <div id="masterSpinner" class="spinner hidden" style="width:18px; height:18px;"></div>
-    </div>
-    <div id="masterList" class="space-y-2">
-      <div class="text-gray-400 text-sm text-center py-4">読込中…</div>
-    </div>
-  </div>
-
-  <!-- 新規追加フォーム -->
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50">
-    <div class="text-sm font-semibold text-gray-700 mb-3">➕ 新規追加</div>
-    <div class="mb-2">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">種別名</label>
-      <input id="newMasterType" type="text" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50" placeholder="例: 学生">
-    </div>
-    <div class="mb-2">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">金額（円）</label>
-      <input id="newMasterAmount" type="number" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50" placeholder="例: 4000">
-    </div>
-    <div class="mb-3">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">説明（任意）</label>
-      <input id="newMasterDesc" type="text" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50" placeholder="例: 学生向け施術">
-    </div>
-    <button id="addMasterBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl py-2.5 font-semibold text-sm transition-colors shadow-sm">
-      ➕ 追加する
-    </button>
-  </div>
-</div>
-
-<!-- ========== 経理タブ ========== -->
-<div id="tab-accounting" class="tab-content fade-in">
-  <div class="bg-white rounded-xl p-5 shadow-sm border border-indigo-50 mb-4">
-    <div class="text-sm font-semibold text-gray-700 mb-4">📑 経理シート生成</div>
-    <div class="flex gap-2 mb-4">
-      <select id="accYear" class="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 bg-gray-50"></select>
-      <select id="accMonth" class="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 bg-gray-50"></select>
-    </div>
-    <button id="genAccBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl py-3 font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-sm">
-      <span id="genAccBtnText">📑 経理シートを生成する</span>
-      <div id="genAccSpinner" class="spinner hidden" style="width:18px; height:18px; border-color:rgba(255,255,255,0.4); border-top-color:white;"></div>
-    </button>
-  </div>
-
-  <div id="accResult" class="hidden">
-    <div class="bg-green-50 rounded-xl p-4 border border-green-100 mb-3">
-      <div class="text-green-700 font-medium text-sm flex items-start gap-2">
-        <span>✅</span>
-        <span id="accResultMsg"></span>
-      </div>
-    </div>
-    <a id="accSheetLink" href="#" target="_blank"
-      class="block w-full text-center bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-700 rounded-xl py-3 font-semibold text-sm transition-colors shadow-sm">
-      📊 スプレッドシートを開く →
-    </a>
-  </div>
-
-  <div class="mt-4 bg-indigo-50 rounded-xl p-3 border border-indigo-100">
-    <div class="text-xs text-indigo-700">
-      <span class="font-semibold">📌 補足：</span>日別の新規・常連の件数と売上が自動集計されたシートが生成されます。
-    </div>
-  </div>
-</div>
-
-</main>
-
-<!-- ========== 修正モーダル ========== -->
-<div id="editModal" class="modal fixed inset-0 bg-black/50 z-50 items-end justify-center">
-  <div class="bg-white w-full max-w-lg rounded-t-3xl p-5 shadow-xl">
-    <div class="flex items-center justify-between mb-4">
-      <div class="text-base font-semibold text-gray-800">✏️ 売上修正</div>
-      <button id="closeEditModal" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
-    </div>
-    <div class="mb-3">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">種別</label>
-      <select id="editType" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50"></select>
-    </div>
-    <div class="mb-4">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">金額（円）</label>
-      <input id="editAmount" type="number" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50">
-    </div>
-    <input type="hidden" id="editRowIndex">
-    <button id="confirmEditBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-3 font-semibold text-sm transition-colors shadow-sm">
-      ✅ 修正を保存する
-    </button>
-  </div>
-</div>
-
-<!-- マスタ編集モーダル -->
-<div id="editMasterModal" class="modal fixed inset-0 bg-black/50 z-50 items-end justify-center">
-  <div class="bg-white w-full max-w-lg rounded-t-3xl p-5 shadow-xl">
-    <div class="flex items-center justify-between mb-4">
-      <div class="text-base font-semibold text-gray-800">✏️ マスタ編集</div>
-      <button id="closeEditMasterModal" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
-    </div>
-    <div class="mb-3">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">種別名</label>
-      <input id="editMasterType" type="text" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50">
-    </div>
-    <div class="mb-3">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">金額（円）</label>
-      <input id="editMasterAmount" type="number" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50">
-    </div>
-    <div class="mb-4">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">説明（任意）</label>
-      <input id="editMasterDesc" type="text" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50">
-    </div>
-    <input type="hidden" id="editMasterRowIndex">
-    <button id="confirmEditMasterBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-3 font-semibold text-sm transition-colors shadow-sm">
-      ✅ 更新する
-    </button>
-  </div>
-</div>
-
-<!-- トースト通知 -->
-<div id="toast" class="toast fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-sm px-5 py-3 rounded-full shadow-xl max-w-xs text-center pointer-events-none">
-  <span id="toastMsg"></span>
 </div>
 
 <script>
+// ============================================================
+//  CONFIG
+// ============================================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycby3931P6ityh6mjGOiBVmLdRSR12lXss9TxYYAxd9XHBYKNJCPhSjBw1_b9cjh2e-_B/exec';
-const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/17bAyQngDEjoDgqSLLUU5p45HWXomF09bLf_h6FySsjs';
 
-let masterItems = [];
-let historyRecords = [];
-let monthChart = null;
-let trendChart = null;
-
-// ========== ユーティリティ ==========
-
-function fmt(n) {
-  return '¥' + Number(n).toLocaleString();
+// ============================================================
+//  API
+// ============================================================
+async function api(action, params = {}) {
+  const isGet = !params.body;
+  let url = GAS_URL + '?action=' + action;
+  if (isGet) {
+    Object.keys(params).forEach(k => url += '&' + k + '=' + encodeURIComponent(params[k]));
+    const res = await fetch(url);
+    return res.json();
+  } else {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action, ...params.body})
+    });
+    return res.json();
+  }
 }
 
-function showToast(msg, isError = false) {
-  const toast = document.getElementById('toast');
-  const toastMsg = document.getElementById('toastMsg');
-  toastMsg.textContent = msg;
-  toast.classList.toggle('bg-red-600', isError);
-  toast.classList.toggle('bg-gray-900', !isError);
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 3000);
-}
+// ============================================================
+//  STATE
+// ============================================================
+let masterData = [];
+let historyData = [];
+let todayData = { total: 0, count: 0, newCount: 0, newAmount: 0, regCount: 0, regAmount: 0 };
+let yesterdayTotal = 0;
+let statsYear = new Date().getFullYear();
+let statsMonth = new Date().getMonth() + 1;
+let monthlyChart = null;
+let yearlyChart = null;
+let pendingDelete = null;
+let snackbarTimer = null;
+let currentChartTab = 'monthly';
 
-async function apiGet(params) {
-  const url = GAS_URL + '?' + new URLSearchParams(params);
-  const res = await fetch(url);
-  return res.json();
-}
+// Quick button color palette
+const QB_COLORS = [
+  { bg: '#eef2ff', color: '#4f46e5', border: '#c7d2fe' },
+  { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0' },
+  { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe' },
+  { bg: '#fdf4ff', color: '#9333ea', border: '#e9d5ff' },
+  { bg: '#fff7ed', color: '#ea580c', border: '#fed7aa' },
+  { bg: '#fef2f2', color: '#dc2626', border: '#fecaca' },
+  { bg: '#f0fdfa', color: '#0d9488', border: '#99f6e4' },
+  { bg: '#fffbeb', color: '#d97706', border: '#fde68a' },
+];
 
-async function apiPost(body) {
-  const res = await fetch(GAS_URL, {
-    method: 'POST',
-    body: JSON.stringify(body)
+// ============================================================
+//  NAVIGATION
+// ============================================================
+function switchPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
   });
-  return res.json();
+  document.querySelectorAll('.nav-item, .sidebar-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.page === pageId);
+  });
+  const target = document.getElementById('page-' + pageId);
+  if (target) {
+    target.classList.add('active');
+    window.scrollTo(0, 0);
+  }
+  if (pageId === 'stats') loadStats();
+  if (pageId === 'settings') loadMaster();
+  if (pageId === 'input') loadHistory();
+  if (pageId === 'home') refreshHome();
 }
 
-// ========== 日時 ==========
+// Nav click handlers
+document.querySelectorAll('.nav-item, .sidebar-item').forEach(el => {
+  el.addEventListener('click', () => switchPage(el.dataset.page));
+});
 
-function updateHeaderDate() {
-  const now = new Date();
-  const d = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} (${['日','月','火','水','木','金','土'][now.getDay()]})`;
-  document.getElementById('headerDate').textContent = d;
-  document.getElementById('todayDate').textContent = d;
+// ============================================================
+//  DATE HELPERS
+// ============================================================
+const DAYS_JA = ['日','月','火','水','木','金','土'];
+const MONTHS_JA = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
-// ========== マスタ取得 ==========
+function fmtDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const yesterday = new Date(today); yesterday.setDate(today.getDate()-1);
+  if (d.getTime() === today.getTime()) return '今日';
+  if (d.getTime() === yesterday.getTime()) return '昨日';
+  return `${d.getMonth()+1}月${d.getDate()}日`;
+}
 
+function fmtMoney(v) {
+  return '¥' + Math.round(v || 0).toLocaleString('ja-JP');
+}
+
+function fmtTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+// ============================================================
+//  COUNTUP ANIMATION
+// ============================================================
+function countUp(el, target, prefix = '¥', suffix = '', duration = 600) {
+  const start = 0;
+  const startTime = performance.now();
+  function update(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(start + (target - start) * ease);
+    el.textContent = prefix + current.toLocaleString('ja-JP') + suffix;
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+// ============================================================
+//  TOAST
+// ============================================================
+let toastTimer = null;
+function showToast(msg = '✅ 登録しました', duration = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ============================================================
+//  SNACKBAR (UNDO)
+// ============================================================
+function showSnackbar(msg) {
+  const s = document.getElementById('snackbar');
+  document.getElementById('snackbar-msg').textContent = msg;
+  s.classList.add('show');
+  if (snackbarTimer) clearTimeout(snackbarTimer);
+  snackbarTimer = setTimeout(() => {
+    s.classList.remove('show');
+    pendingDelete = null;
+  }, 5000);
+}
+
+function undoDelete() {
+  if (!pendingDelete) return;
+  const { item, parentEl, beforeEl } = pendingDelete;
+  if (beforeEl) parentEl.insertBefore(item, beforeEl);
+  else parentEl.appendChild(item);
+  item.classList.remove('removing');
+  historyData.unshift(pendingDelete.record);
+  pendingDelete = null;
+  document.getElementById('snackbar').classList.remove('show');
+  if (snackbarTimer) clearTimeout(snackbarTimer);
+}
+
+// ============================================================
+//  MASTER DATA
+// ============================================================
 async function loadMaster() {
   try {
-    const data = await apiGet({ action: 'getMaster' });
-    masterItems = data.items || [];
+    const data = await api('getMaster');
+    masterData = Array.isArray(data) ? data : (data.data || []);
     renderMasterList();
-    updateTypeSelects();
-    renderQuickBtns();
-  } catch (e) {
-    showToast('マスタ取得エラー', true);
+    renderQuickButtons();
+    populateTypeSelect();
+  } catch(e) {
+    console.error('getMaster error', e);
+  }
+}
+
+function renderQuickButtons() {
+  const wrap = document.getElementById('quick-buttons');
+  if (!masterData.length) {
+    wrap.innerHTML = '<div class="no-data">マスタが設定されていません</div>';
+    return;
+  }
+  wrap.innerHTML = masterData.map((m, i) => {
+    const c = QB_COLORS[i % QB_COLORS.length];
+    return `<button class="quick-btn" 
+      style="background:${c.bg};color:${c.color};border:1.5px solid ${c.border};"
+      onclick="quickRegister('${escHtml(m.id||'')}','${escHtml(m.name)}',${parseInt(m.price)||0})">
+      <span>${escHtml(m.name)}</span>
+      <span style="font-size:14px;opacity:0.8;">${fmtMoney(m.price)}</span>
+    </button>`;
+  }).join('');
+}
+
+function populateTypeSelect() {
+  const sel = document.getElementById('input-type');
+  sel.innerHTML = '<option value="">選択してください</option>' +
+    masterData.map(m =>
+      `<option value="${escHtml(m.id||m.name)}" data-price="${parseInt(m.price)||0}">${escHtml(m.name)} (${fmtMoney(m.price)})</option>`
+    ).join('');
+}
+
+function onTypeChange() {
+  const sel = document.getElementById('input-type');
+  const opt = sel.options[sel.selectedIndex];
+  if (opt && opt.dataset.price) {
+    document.getElementById('input-amount').value = opt.dataset.price;
   }
 }
 
 function renderMasterList() {
-  const el = document.getElementById('masterList');
-  if (!masterItems.length) {
-    el.innerHTML = '<div class="text-gray-400 text-sm text-center py-4">マスタが空です</div>';
+  const wrap = document.getElementById('master-list');
+  if (!masterData.length) {
+    wrap.innerHTML = '<div class="no-data">種別がありません</div>';
     return;
   }
-  el.innerHTML = masterItems.map(item => `
-    <div class="flex items-center justify-between bg-indigo-50 rounded-xl px-3 py-3 border border-indigo-100">
+  wrap.innerHTML = masterData.map(m => `
+    <div class="settings-row" onclick="openEditMasterModal('${escHtml(m.id||m.name)}')">
       <div>
-        <div class="font-semibold text-sm text-gray-800">${item.type}</div>
-        <div class="text-xs text-indigo-600 font-medium">${fmt(item.amount)}</div>
-        <div class="text-xs text-gray-400">${item.description || ''}</div>
+        <div style="font-size:14px;font-weight:600;color:#111827;">${escHtml(m.name)}</div>
+        ${m.description ? `<div style="font-size:12px;color:#9ca3af;margin-top:1px;">${escHtml(m.description)}</div>` : ''}
       </div>
-      <div class="flex gap-2">
-        <button onclick="openEditMaster(${item.rowIndex},'${escHtml(item.type)}',${item.amount},'${escHtml(item.description)}')"
-          class="text-indigo-500 hover:text-indigo-700 p-1.5 rounded-lg hover:bg-indigo-100 transition-colors text-base">✏️</button>
-        <button onclick="deleteMaster(${item.rowIndex},'${escHtml(item.type)}')"
-          class="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors text-base">🗑</button>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:15px;font-weight:700;color:#4f46e5;">${fmtMoney(m.price)}</span>
+        <span style="color:#9ca3af;font-size:18px;">›</span>
       </div>
     </div>
   `).join('');
 }
 
-function updateTypeSelects() {
-  const options = masterItems.map(i => `<option value="${escHtml(i.type)}" data-amount="${i.amount}">${i.type} (${fmt(i.amount)})</option>`).join('');
-  document.getElementById('inputType').innerHTML = options || '<option value="">マスタが空です</option>';
-  document.getElementById('editType').innerHTML = options;
+// Master modal
+function openAddMasterModal() {
+  document.getElementById('master-modal-title').textContent = '種別を追加';
+  document.getElementById('master-edit-id').value = '';
+  document.getElementById('master-name').value = '';
+  document.getElementById('master-price').value = '';
+  document.getElementById('master-desc').value = '';
+  document.getElementById('master-delete-section').style.display = 'none';
+  document.getElementById('master-modal').classList.add('open');
+}
 
-  // 金額自動入力
-  const inputType = document.getElementById('inputType');
-  if (inputType.options.length > 0) {
-    const sel = inputType.options[inputType.selectedIndex];
-    document.getElementById('inputAmount').value = sel ? sel.dataset.amount : '';
+function openEditMasterModal(id) {
+  const m = masterData.find(x => (x.id || x.name) === id);
+  if (!m) return;
+  document.getElementById('master-modal-title').textContent = '種別を編集';
+  document.getElementById('master-edit-id').value = id;
+  document.getElementById('master-name').value = m.name || '';
+  document.getElementById('master-price').value = m.price || '';
+  document.getElementById('master-desc').value = m.description || '';
+  document.getElementById('master-delete-section').style.display = 'block';
+  document.getElementById('master-modal').classList.add('open');
+}
+
+function closeMasterModal() {
+  document.getElementById('master-modal').classList.remove('open');
+}
+
+async function saveMaster() {
+  const id = document.getElementById('master-edit-id').value;
+  const name = document.getElementById('master-name').value.trim();
+  const price = parseInt(document.getElementById('master-price').value) || 0;
+  const description = document.getElementById('master-desc').value.trim();
+  if (!name) { showToast('⚠️ 種別名を入力してください', 2000); return; }
+  const btn = document.getElementById('master-save-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const action = id ? 'updateMaster' : 'addMaster';
+    const body = id ? { id, name, price, description } : { name, price, description };
+    await api(action, { body });
+    closeMasterModal();
+    await loadMaster();
+    showToast(id ? '✅ 更新しました' : '✅ 追加しました');
+  } catch(e) {
+    showToast('❌ エラーが発生しました', 2000);
+  } finally {
+    btn.disabled = false; btn.textContent = '保存';
   }
 }
 
-function renderQuickBtns() {
-  const el = document.getElementById('quickBtns');
-  if (!masterItems.length) {
-    el.innerHTML = '<div class="text-gray-400 text-sm text-center py-2">マスタが空です</div>';
-    return;
+async function deleteMasterConfirm() {
+  const id = document.getElementById('master-edit-id').value;
+  if (!id) return;
+  if (!confirm('この種別を削除しますか？')) return;
+  try {
+    await api('deleteMaster', { body: { id } });
+    closeMasterModal();
+    await loadMaster();
+    showToast('🗑 削除しました');
+  } catch(e) {
+    showToast('❌ エラーが発生しました', 2000);
   }
-  const emojis = ['🆕','👥','⭐','🌟','💫','✨','🎯','💎'];
-  el.innerHTML = masterItems.map((item, i) => `
-    <button onclick="quickAdd('${escHtml(item.type)}',${item.amount})"
-      class="quick-btn w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl py-3.5 font-semibold text-sm shadow-sm flex items-center justify-between px-4">
-      <span>${emojis[i % emojis.length]} ${item.type}</span>
-      <span class="text-indigo-200">${fmt(item.amount)}</span>
-    </button>
+}
+
+// ============================================================
+//  QUICK REGISTER
+// ============================================================
+async function quickRegister(id, name, price) {
+  const btn = [...document.querySelectorAll('.quick-btn')].find(b => b.textContent.includes(name));
+  if (btn) {
+    btn.style.transform = 'scale(0.94)';
+    setTimeout(() => btn.style.transform = '', 200);
+  }
+  try {
+    const today = todayStr();
+    await api('addRecord', { body: { date: today, type: name, amount: price } });
+    showToast(`✅ ${name} ${fmtMoney(price)} を登録しました`);
+    await refreshHome();
+  } catch(e) {
+    showToast('❌ 登録に失敗しました', 2500);
+  }
+}
+
+// ============================================================
+//  HOME REFRESH
+// ============================================================
+async function refreshHome() {
+  try {
+    const today = todayStr();
+    const [todayRes, yesterdayRes] = await Promise.all([
+      api('getDaily', { date: today }),
+      api('getDaily', { date: getYesterdayStr() })
+    ]);
+
+    const tr = todayRes.data || todayRes;
+    const yr = yesterdayRes.data || yesterdayRes;
+
+    const total = parseInt(tr.total) || 0;
+    const count = parseInt(tr.count) || 0;
+    const newCnt = parseInt(tr.newCount) || 0;
+    const newAmt = parseInt(tr.newAmount) || 0;
+    const regCnt = parseInt(tr.regularCount || tr.regCount) || 0;
+    const regAmt = parseInt(tr.regularAmount || tr.regAmount) || 0;
+    yesterdayTotal = parseInt(yr.total) || 0;
+
+    // Hero card
+    countUp(document.getElementById('hero-amount'), total, '¥');
+    document.getElementById('hero-count').textContent = count + '件';
+
+    // Compare badge
+    const badge = document.getElementById('compare-badge');
+    if (yesterdayTotal > 0) {
+      const pct = Math.round((total - yesterdayTotal) / yesterdayTotal * 100);
+      if (pct > 0) {
+        badge.className = 'cmp-badge cmp-up';
+        badge.textContent = `▲${pct}% 昨日比`;
+      } else if (pct < 0) {
+        badge.className = 'cmp-badge cmp-down';
+        badge.textContent = `▼${Math.abs(pct)}% 昨日比`;
+      } else {
+        badge.className = 'cmp-badge cmp-flat';
+        badge.textContent = '— 昨日比同じ';
+      }
+    } else {
+      badge.className = 'cmp-badge cmp-flat';
+      badge.textContent = '— 昨日比';
+    }
+
+    // New/Regular
+    document.getElementById('new-count').textContent = newCnt + '件';
+    document.getElementById('new-amount').textContent = fmtMoney(newAmt);
+    document.getElementById('regular-count').textContent = regCnt + '件';
+    document.getElementById('regular-amount').textContent = fmtMoney(regAmt);
+
+    // Today records (top 5)
+    const recRes = await api('getRecords', { date: today, limit: 5 });
+    const recs = Array.isArray(recRes) ? recRes : (recRes.data || []);
+    renderTodayRecords(recs.slice(0, 5));
+  } catch(e) {
+    console.error('refreshHome error', e);
+  }
+}
+
+function getYesterdayStr() {
+  const d = new Date(); d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function renderTodayRecords(recs) {
+  const wrap = document.getElementById('today-records');
+  if (!recs.length) { wrap.innerHTML = '<div class="no-data">記録がありません</div>'; return; }
+  wrap.innerHTML = recs.map(r => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f3f4f6;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="badge" style="background:#eef2ff;color:#4f46e5;">${escHtml(r.type||r.name||'')}</span>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:14px;font-weight:700;color:#111827;">${fmtMoney(r.amount)}</div>
+        <div style="font-size:11px;color:#9ca3af;">${fmtTime(r.timestamp||r.time)}</div>
+      </div>
+    </div>
   `).join('');
 }
 
-// ========== 今日の売上 ==========
+// ============================================================
+//  SUBMIT RECORD (Input tab)
+// ============================================================
+async function submitRecord() {
+  const typeEl = document.getElementById('input-type');
+  const amountEl = document.getElementById('input-amount');
+  const typeName = typeEl.options[typeEl.selectedIndex]?.text?.split(' (')[0] || typeEl.value;
+  const amount = parseInt(amountEl.value) || 0;
+  if (!typeEl.value) { showToast('⚠️ 種別を選択してください', 2000); return; }
+  if (!amount) { showToast('⚠️ 金額を入力してください', 2000); return; }
 
-async function loadTodayStats() {
-  document.getElementById('homeLoadingSpinner').classList.remove('hidden');
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> 登録中...';
   try {
-    const data = await apiGet({ action: 'getTodayStats' });
-    document.getElementById('todayTotal').textContent = fmt(data.totalSales);
-    document.getElementById('todayCount').textContent = `${data.totalCount} 件`;
-    document.getElementById('homeShinki').textContent = fmt(data.shinkiSales);
-    document.getElementById('homeShinkiCount').textContent = `${data.shinkiCount} 件`;
-    document.getElementById('homeJoren').textContent = fmt(data.jorenSales);
-    document.getElementById('homeJorenCount').textContent = `${data.jorenCount} 件`;
-
-    // 前日比
-    const now = new Date();
-    const yesterday = new Date(now); yesterday.setDate(now.getDate()-1);
-    const prevDay = await apiGet({ action: 'getMonthStats', year: yesterday.getFullYear(), month: yesterday.getMonth()+1 });
-    // 簡易前月比
-    const prevMonth = new Date(now.getFullYear(), now.getMonth()-1, 1);
-    const prevMonthData = await apiGet({ action: 'getMonthStats', year: prevMonth.getFullYear(), month: prevMonth.getMonth()+1 });
-    const thisMonthData = await apiGet({ action: 'getMonthStats', year: now.getFullYear(), month: now.getMonth()+1 });
-
-    const prevMonthSales = prevMonthData.totalSales || 0;
-    const thisMonthSales = thisMonthData.totalSales || 0;
-    if (prevMonthSales > 0) {
-      const diff = thisMonthSales - prevMonthSales;
-      const pct = Math.round(diff / prevMonthSales * 100);
-      const badge = document.getElementById('badge_lastmonth');
-      badge.textContent = `前月比 ${pct >= 0 ? '+' : ''}${pct}%`;
-      badge.className = `px-2 py-0.5 rounded-full text-xs font-medium ${pct >= 0 ? 'bg-green-500/30 text-green-100' : 'bg-red-400/30 text-red-100'}`;
-      badge.classList.remove('hidden');
-    }
-
-    await loadTodayHistory();
-  } catch (e) {
-    document.getElementById('todayTotal').textContent = 'エラー';
-  } finally {
-    document.getElementById('homeLoadingSpinner').classList.add('hidden');
-  }
-}
-
-async function loadTodayHistory() {
-  try {
-    const data = await apiGet({ action: 'getRecentHistory', days: 1 });
-    const records = data.records || [];
-    const el = document.getElementById('todayHistory');
-    if (!records.length) {
-      el.innerHTML = '<div class="text-center text-gray-400 py-2">まだ今日の記録はありません</div>';
-      return;
-    }
-    el.innerHTML = records.slice(0, 5).map(r => `
-      <div class="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
-        <div class="text-gray-600 text-xs">${r.time}</div>
-        <div class="text-xs font-medium text-indigo-700 bg-indigo-50 rounded px-2 py-0.5">${r.type}</div>
-        <div class="text-sm font-semibold text-gray-800">${fmt(r.amount)}</div>
-      </div>
-    `).join('');
-  } catch(e) {}
-}
-
-// ========== クイック入力 ==========
-
-async function quickAdd(type, amount) {
-  try {
-    const res = await apiPost({ action: 'addSale', type, amount: Number(amount) });
-    if (res.success) {
-      showToast(`✅ ${type} ${fmt(amount)} を登録しました`);
-      loadTodayStats();
-      if (document.getElementById('tab-input').classList.contains('active')) {
-        loadHistory();
-      }
-    } else {
-      showToast(res.message, true);
-    }
+    const today = todayStr();
+    await api('addRecord', { body: { date: today, type: typeName, amount } });
+    showToast(`✅ ${typeName} ${fmtMoney(amount)} を登録しました`);
+    typeEl.selectedIndex = 0;
+    amountEl.value = '';
+    await loadHistory();
+    await refreshHome();
   } catch(e) {
-    showToast('登録エラー', true);
+    showToast('❌ 登録に失敗しました', 2500);
+  } finally {
+    btn.disabled = false; btn.textContent = '登録する';
   }
 }
 
-// ========== 売上入力 ==========
-
-document.getElementById('inputType').addEventListener('change', function() {
-  const sel = this.options[this.selectedIndex];
-  if (sel && sel.dataset.amount) {
-    document.getElementById('inputAmount').value = sel.dataset.amount;
-  }
-});
-
-document.getElementById('addSaleBtn').addEventListener('click', async function() {
-  const type = document.getElementById('inputType').value;
-  const amount = Number(document.getElementById('inputAmount').value);
-  if (!type || !amount) {
-    showToast('種別と金額を入力してください', true);
-    return;
-  }
-  this.disabled = true;
-  this.innerHTML = '<div class="spinner" style="width:18px;height:18px;margin:0 auto;border-color:rgba(255,255,255,0.4);border-top-color:white;"></div>';
-  try {
-    const res = await apiPost({ action: 'addSale', type, amount });
-    if (res.success) {
-      showToast(`✅ ${type} ${fmt(amount)} を登録しました`);
-      loadHistory();
-      loadTodayStats();
-    } else {
-      showToast(res.message, true);
-    }
-  } catch(e) {
-    showToast('登録エラー', true);
-  } finally {
-    this.disabled = false;
-    this.innerHTML = '<span>✅ 登録する</span>';
-  }
-});
-
-// ========== 履歴 ==========
-
+// ============================================================
+//  HISTORY
+// ============================================================
 async function loadHistory() {
-  document.getElementById('historySpinner').classList.remove('hidden');
+  const wrap = document.getElementById('history-list');
+  wrap.innerHTML = '<div class="no-data">読み込み中...</div>';
   try {
-    const data = await apiGet({ action: 'getRecentHistory', days: 30 });
-    historyRecords = data.records || [];
+    const res = await api('getRecords', { limit: 30 });
+    historyData = Array.isArray(res) ? res : (res.data || []);
     renderHistory();
   } catch(e) {
-    document.getElementById('historyList').innerHTML = '<div class="text-red-400 text-sm text-center py-4">履歴取得エラー</div>';
-  } finally {
-    document.getElementById('historySpinner').classList.add('hidden');
+    wrap.innerHTML = '<div class="no-data">読み込みに失敗しました</div>';
   }
 }
 
 function renderHistory() {
-  const el = document.getElementById('historyList');
-  if (!historyRecords.length) {
-    el.innerHTML = '<div class="text-gray-400 text-sm text-center py-4">履歴がありません</div>';
-    return;
-  }
-  el.innerHTML = historyRecords.map(r => `
-    <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0 gap-2">
-      <div class="text-xs text-gray-400 min-w-[70px]">${r.date}<br>${r.time}</div>
-      <div class="text-xs font-medium text-indigo-700 bg-indigo-50 rounded px-2 py-0.5 flex-shrink-0">${r.type}</div>
-      <div class="text-sm font-semibold text-gray-800 flex-1 text-right">${fmt(r.amount)}</div>
-      <div class="flex gap-1 flex-shrink-0">
-        <button onclick="openEditSale(${r.rowIndex},'${escHtml(r.type)}',${r.amount})"
-          class="text-indigo-400 hover:text-indigo-600 p-1.5 rounded-lg hover:bg-indigo-50 transition-colors text-sm">✏️</button>
-        <button onclick="deleteSale(${r.rowIndex},'${r.date}')"
-          class="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors text-sm">🗑</button>
-      </div>
-    </div>
-  `).join('');
+  const wrap = document.getElementById('history-list');
+  if (!historyData.length) { wrap.innerHTML = '<div class="no-data">履歴がありません</div>'; return; }
+
+  // Group by date
+  const groups = {};
+  historyData.forEach(r => {
+    const d = (r.date || '').split('T')[0] || (r.timestamp||'').slice(0,10);
+    if (!groups[d]) groups[d] = [];
+    groups[d].push(r);
+  });
+
+  const sortedDates = Object.keys(groups).sort((a,b) => b.localeCompare(a));
+  const colorMap = {};
+  masterData.forEach((m,i) => { colorMap[m.name] = QB_COLORS[i % QB_COLORS.length]; });
+
+  wrap.innerHTML = sortedDates.map(date => {
+    const label = fmtDate(date);
+    const items = groups[date];
+    return `
+      <div style="margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:700;color:#6b7280;margin-bottom:8px;padding:0 4px;">${label}</div>
+        ${items.map(r => {
+          const rid = r.id || r.rowIndex || '';
+          const c = colorMap[r.type||r.name] || QB_COLORS[0];
+          return `
+            <div class="card history-item" style="margin-bottom:8px;padding:14px 16px;" id="rec-${rid}">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span class="badge" style="background:${c.bg};color:${c.color};">${escHtml(r.type||r.name||'')}</span>
+                  <span style="font-size:11px;color:#9ca3af;">${fmtTime(r.timestamp||r.time||r.date)}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <span style="font-size:16px;font-weight:700;color:#111827;">${fmtMoney(r.amount)}</span>
+                  <button onclick="startEditRecord('${rid}')" style="background:none;border:none;cursor:pointer;font-size:18px;padding:4px;" title="編集">✏️</button>
+                  <button onclick="deleteRecord('${rid}')" style="background:none;border:none;cursor:pointer;font-size:18px;padding:4px;" title="削除">🗑</button>
+                </div>
+              </div>
+              <div id="edit-form-${rid}" style="display:none;margin-top:12px;" class="edit-row">
+                <div style="display:flex;gap:8px;align-items:flex-end;">
+                  <div style="flex:1;">
+                    <label class="form-label">種別</label>
+                    <select id="edit-type-${rid}" class="form-select" style="font-size:14px;padding:10px 12px;" onchange="editTypeChange('${rid}')">
+                      ${masterData.map(m => `<option value="${escHtml(m.name)}" ${m.name===(r.type||r.name)?'selected':''}>${escHtml(m.name)}</option>`).join('')}
+                    </select>
+                  </div>
+                  <div style="flex:1;">
+                    <label class="form-label">金額</label>
+                    <input id="edit-amount-${rid}" type="number" class="form-input" value="${parseInt(r.amount)||0}" style="font-size:14px;padding:10px 12px;" inputmode="numeric">
+                  </div>
+                  <button onclick="saveEditRecord('${rid}')" style="height:44px;padding:0 14px;background:#4f46e5;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">保存</button>
+                  <button onclick="cancelEditRecord('${rid}')" style="height:44px;padding:0 10px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">×</button>
+                </div>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>`;
+  }).join('');
 }
 
-// ========== 修正モーダル ==========
-
-function openEditSale(rowIndex, type, amount) {
-  document.getElementById('editRowIndex').value = rowIndex;
-  document.getElementById('editType').value = type;
-  document.getElementById('editAmount').value = amount;
-  document.getElementById('editModal').classList.add('open');
+function startEditRecord(rid) {
+  document.getElementById('edit-form-' + rid).style.display = 'block';
 }
-
-document.getElementById('closeEditModal').addEventListener('click', () => {
-  document.getElementById('editModal').classList.remove('open');
-});
-
-document.getElementById('editModal').addEventListener('click', function(e) {
-  if (e.target === this) this.classList.remove('open');
-});
-
-document.getElementById('confirmEditBtn').addEventListener('click', async function() {
-  const rowIndex = Number(document.getElementById('editRowIndex').value);
-  const type = document.getElementById('editType').value;
-  const amount = Number(document.getElementById('editAmount').value);
-  if (!rowIndex || !type || !amount) {
-    showToast('全項目を入力してください', true); return;
-  }
-  this.disabled = true;
+function cancelEditRecord(rid) {
+  document.getElementById('edit-form-' + rid).style.display = 'none';
+}
+function editTypeChange(rid) {
+  const sel = document.getElementById('edit-type-' + rid);
+  const opt = sel.options[sel.selectedIndex];
+  const m = masterData.find(x => x.name === opt.value);
+  if (m) document.getElementById('edit-amount-' + rid).value = m.price;
+}
+async function saveEditRecord(rid) {
+  const type = document.getElementById('edit-type-' + rid).value;
+  const amount = parseInt(document.getElementById('edit-amount-' + rid).value) || 0;
   try {
-    const res = await apiPost({ action: 'editSale', rowIndex, type, amount });
-    if (res.success) {
-      showToast('✅ 修正しました');
-      document.getElementById('editModal').classList.remove('open');
-      loadHistory();
-      loadTodayStats();
-    } else {
-      showToast(res.message, true);
-    }
-  } catch(e) {
-    showToast('修正エラー', true);
-  } finally {
-    this.disabled = false;
-  }
-});
-
-// ========== 削除 ==========
-
-async function deleteSale(rowIndex, dateStr) {
-  if (!confirm(`${dateStr} の売上を削除しますか？`)) return;
-  try {
-    const res = await apiPost({ action: 'deleteSale', rowIndex });
-    if (res.success) {
-      showToast('🗑 削除しました');
-      loadHistory();
-      loadTodayStats();
-    } else {
-      showToast(res.message, true);
-    }
-  } catch(e) {
-    showToast('削除エラー', true);
-  }
+    await api('updateRecord', { body: { id: rid, type, amount } });
+    showToast('✅ 更新しました');
+    await loadHistory();
+    await refreshHome();
+  } catch(e) { showToast('❌ 更新に失敗しました', 2500); }
 }
 
-// ========== 集計 ==========
+async function deleteRecord(rid) {
+  const el = document.getElementById('rec-' + rid);
+  const record = historyData.find(r => (r.id || r.rowIndex || '') == rid);
+  const parentEl = el?.parentElement;
+  const beforeEl = el?.nextSibling;
 
-function initStatsSelects() {
-  const now = new Date();
-  const yearSel = document.getElementById('statsYear');
-  const monthSel = document.getElementById('statsMonth');
-  for (let y = now.getFullYear(); y >= now.getFullYear()-3; y--) {
-    yearSel.innerHTML += `<option value="${y}">${y}年</option>`;
+  if (el) {
+    el.classList.add('removing');
+    setTimeout(() => el.remove(), 300);
   }
-  for (let m = 1; m <= 12; m++) {
-    monthSel.innerHTML += `<option value="${m}" ${m === now.getMonth()+1 ? 'selected' : ''}>${m}月</option>`;
-  }
+  historyData = historyData.filter(r => (r.id || r.rowIndex || '') != rid);
+  pendingDelete = { item: el, parentEl, beforeEl, record };
+  showSnackbar('削除しました');
+
+  // Actually delete after snackbar timeout
+  snackbarTimer = setTimeout(async () => {
+    if (pendingDelete && pendingDelete.record) {
+      try {
+        await api('deleteRecord', { body: { id: rid } });
+        await refreshHome();
+      } catch(e) { console.error(e); }
+    }
+    pendingDelete = null;
+    document.getElementById('snackbar').classList.remove('show');
+  }, 5000);
+}
+
+// ============================================================
+//  STATS
+// ============================================================
+function changeMonth(delta) {
+  statsMonth += delta;
+  if (statsMonth > 12) { statsMonth = 1; statsYear++; }
+  if (statsMonth < 1) { statsMonth = 12; statsYear--; }
+  loadStats();
 }
 
 async function loadStats() {
-  const year = Number(document.getElementById('statsYear').value);
-  const month = Number(document.getElementById('statsMonth').value);
-  document.getElementById('statsSpinner').classList.remove('hidden');
+  const label = `${statsYear}年${statsMonth}月`;
+  document.getElementById('stats-month-label').textContent = label;
+
   try {
-    const data = await apiGet({ action: 'getMonthStats', year, month });
-    document.getElementById('statsShinkiSales').textContent = fmt(data.shinkiSales);
-    document.getElementById('statsShinkiCount').textContent = `${data.shinkiCount}件`;
-    document.getElementById('statsJorenSales').textContent = fmt(data.jorenSales);
-    document.getElementById('statsJorenCount').textContent = `${data.jorenCount}件`;
-    document.getElementById('statsTotalSales').textContent = fmt(data.totalSales);
-    document.getElementById('statsTotalCount').textContent = `${data.totalCount}件`;
+    const [monthRes, yearRes] = await Promise.all([
+      api('getMonthly', { year: statsYear, month: statsMonth }),
+      api('getYearlySummary', {})
+    ]);
 
-    // 月次棒グラフ
-    renderMonthChart(year, month, data);
+    // Summary
+    const m = monthRes.data || monthRes || {};
+    const total = parseInt(m.total) || 0;
+    const newAmt = parseInt(m.newAmount || m.newTotal) || 0;
+    const regAmt = parseInt(m.regularAmount || m.regTotal) || 0;
+    document.getElementById('stats-total').textContent = fmtMoney(total);
+    document.getElementById('stats-new').textContent = fmtMoney(newAmt);
+    document.getElementById('stats-reg').textContent = fmtMoney(regAmt);
 
-    // 過去12ヶ月トレンド
-    await loadTrend();
-
-    // テーブル
-    renderStatsTable(year, month, data);
+    // Charts
+    renderMonthlyChart(m.daily || []);
+    renderYearlyChart(Array.isArray(yearRes) ? yearRes : (yearRes.data || []));
+    renderMonthlyTable(Array.isArray(yearRes) ? yearRes : (yearRes.data || []));
   } catch(e) {
-    showToast('集計取得エラー', true);
-  } finally {
-    document.getElementById('statsSpinner').classList.add('hidden');
+    console.error('loadStats error', e);
   }
 }
 
-function renderMonthChart(year, month, data) {
-  const ctx = document.getElementById('monthChart').getContext('2d');
-  if (monthChart) monthChart.destroy();
-  monthChart = new Chart(ctx, {
+function renderMonthlyChart(daily) {
+  const ctx = document.getElementById('chart-monthly').getContext('2d');
+  if (monthlyChart) monthlyChart.destroy();
+  const labels = daily.map(d => d.day + '日');
+  const newData = daily.map(d => parseInt(d.newAmount||d.new||0)||0);
+  const regData = daily.map(d => parseInt(d.regularAmount||d.regular||0)||0);
+  monthlyChart = new Chart(ctx, {
     type: 'bar',
-    data: {
-      labels: ['新規', '常連'],
-      datasets: [{
-        label: `${year}年${month}月`,
-        data: [data.shinkiSales, data.jorenSales],
-        backgroundColor: ['#6366f1', '#22c55e'],
-        borderRadius: 6,
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: ctx => fmt(ctx.raw)
-          }
-        }
-      },
-      scales: {
-        y: {
-          ticks: {
-            callback: v => '¥' + v.toLocaleString()
-          }
-        }
-      }
-    }
-  });
-}
-
-async function loadTrend() {
-  const now = new Date();
-  const labels = [], shinkiData = [], jorenData = [], totalData = [];
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
-    labels.push(`${d.getFullYear()}/${d.getMonth()+1}`);
-    const data = await apiGet({ action: 'getMonthStats', year: d.getFullYear(), month: d.getMonth()+1 });
-    shinkiData.push(data.shinkiSales);
-    jorenData.push(data.jorenSales);
-    totalData.push(data.totalSales);
-  }
-
-  const ctx = document.getElementById('trendChart').getContext('2d');
-  if (trendChart) trendChart.destroy();
-  trendChart = new Chart(ctx, {
-    type: 'line',
     data: {
       labels,
       datasets: [
-        {
-          label: '合計',
-          data: totalData,
-          borderColor: '#6366f1',
-          backgroundColor: 'rgba(99,102,241,0.08)',
-          borderWidth: 2,
-          tension: 0.3,
-          fill: true,
-          pointRadius: 3,
-        },
-        {
-          label: '新規',
-          data: shinkiData,
-          borderColor: '#22c55e',
-          borderWidth: 1.5,
-          tension: 0.3,
-          fill: false,
-          pointRadius: 2,
-          borderDash: [4, 4],
-        },
-        {
-          label: '常連',
-          data: jorenData,
-          borderColor: '#f59e0b',
-          borderWidth: 1.5,
-          tension: 0.3,
-          fill: false,
-          pointRadius: 2,
-          borderDash: [4, 4],
-        }
+        { label: '新規', data: newData, backgroundColor: 'rgba(22,163,74,0.75)', borderRadius: 4 },
+        { label: '常連', data: regData, backgroundColor: 'rgba(79,70,229,0.75)', borderRadius: 4 },
       ]
     },
     options: {
-      responsive: true,
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label: ctx => `${ctx.dataset.label}: ${fmt(ctx.raw)}`
-          }
-        }
-      },
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 12 } } },
       scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } },
         y: {
+          stacked: true, beginAtZero: true,
           ticks: {
-            callback: v => '¥' + v.toLocaleString()
+            font: { size: 10 },
+            callback: v => '¥' + Math.round(v).toLocaleString('ja-JP')
           }
         }
       }
@@ -805,205 +1111,176 @@ async function loadTrend() {
   });
 }
 
-function renderStatsTable(year, month, data) {
-  const el = document.getElementById('statsTable');
-  el.innerHTML = `
-    <table class="w-full text-sm">
-      <thead>
-        <tr class="bg-indigo-50">
-          <th class="text-left px-3 py-2 text-xs text-gray-500 font-medium rounded-l-lg">項目</th>
-          <th class="text-right px-3 py-2 text-xs text-gray-500 font-medium">件数</th>
-          <th class="text-right px-3 py-2 text-xs text-gray-500 font-medium rounded-r-lg">売上</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr class="border-b border-gray-50">
-          <td class="px-3 py-2.5 text-gray-600">🆕 新規</td>
-          <td class="px-3 py-2.5 text-right text-gray-700">${data.shinkiCount}件</td>
-          <td class="px-3 py-2.5 text-right font-medium text-indigo-700">${fmt(data.shinkiSales)}</td>
-        </tr>
-        <tr class="border-b border-gray-50">
-          <td class="px-3 py-2.5 text-gray-600">👥 常連</td>
-          <td class="px-3 py-2.5 text-right text-gray-700">${data.jorenCount}件</td>
-          <td class="px-3 py-2.5 text-right font-medium text-green-700">${fmt(data.jorenSales)}</td>
-        </tr>
-        <tr class="bg-indigo-50">
-          <td class="px-3 py-2.5 font-semibold text-gray-800 rounded-l-lg">💰 合計</td>
-          <td class="px-3 py-2.5 text-right font-semibold text-gray-800">${data.totalCount}件</td>
-          <td class="px-3 py-2.5 text-right font-bold text-indigo-800 rounded-r-lg">${fmt(data.totalSales)}</td>
-        </tr>
-      </tbody>
-    </table>
-  `;
+function renderYearlyChart(yearData) {
+  const ctx = document.getElementById('chart-yearly').getContext('2d');
+  if (yearlyChart) yearlyChart.destroy();
+  const sorted = [...yearData].sort((a,b) => {
+    const am = (a.year||0)*100+(a.month||0), bm = (b.year||0)*100+(b.month||0);
+    return am - bm;
+  });
+  const labels = sorted.map(d => `${d.year||''}/${String(d.month||'').padStart(2,'0')}`);
+  const totals = sorted.map(d => parseInt(d.total||0)||0);
+  yearlyChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: '月次合計',
+        data: totals,
+        borderColor: '#4f46e5',
+        backgroundColor: 'rgba(79,70,229,0.08)',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#4f46e5',
+        pointRadius: 4,
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45 } },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            font: { size: 10 },
+            callback: v => '¥' + Math.round(v).toLocaleString('ja-JP')
+          }
+        }
+      }
+    }
+  });
 }
 
-document.getElementById('loadStatsBtn').addEventListener('click', loadStats);
-
-// ========== マスタ追加 ==========
-
-document.getElementById('addMasterBtn').addEventListener('click', async function() {
-  const type = document.getElementById('newMasterType').value.trim();
-  const amount = Number(document.getElementById('newMasterAmount').value);
-  const desc = document.getElementById('newMasterDesc').value.trim();
-  if (!type || !amount) {
-    showToast('種別名と金額は必須です', true); return;
+function renderMonthlyTable(yearData) {
+  const tbody = document.getElementById('monthly-table-body');
+  const sorted = [...yearData].sort((a,b) => {
+    const am = (a.year||0)*100+(a.month||0), bm = (b.year||0)*100+(b.month||0);
+    return bm - am;
+  });
+  if (!sorted.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="no-data">データがありません</td></tr>';
+    return;
   }
-  this.disabled = true;
-  try {
-    const res = await apiPost({ action: 'addMaster', type, amount, description: desc });
-    if (res.success) {
-      showToast('✅ マスタを追加しました');
-      document.getElementById('newMasterType').value = '';
-      document.getElementById('newMasterAmount').value = '';
-      document.getElementById('newMasterDesc').value = '';
-      await loadMaster();
-    } else {
-      showToast(res.message, true);
-    }
-  } catch(e) {
-    showToast('マスタ追加エラー', true);
-  } finally {
-    this.disabled = false;
-  }
-});
-
-// ========== マスタ編集 ==========
-
-function openEditMaster(rowIndex, type, amount, desc) {
-  document.getElementById('editMasterRowIndex').value = rowIndex;
-  document.getElementById('editMasterType').value = type;
-  document.getElementById('editMasterAmount').value = amount;
-  document.getElementById('editMasterDesc').value = desc;
-  document.getElementById('editMasterModal').classList.add('open');
+  const nowY = new Date().getFullYear(), nowM = new Date().getMonth()+1;
+  tbody.innerHTML = sorted.map(d => {
+    const isCurrent = (d.year == nowY && d.month == nowM);
+    const cls = isCurrent ? 'month-row-current' : '';
+    return `<tr class="${cls}">
+      <td style="padding:10px 4px;">${d.year}/${String(d.month).padStart(2,'0')}</td>
+      <td style="padding:10px 4px;text-align:right;color:#16a34a;">${fmtMoney(d.newAmount||d.newTotal||0)}</td>
+      <td style="padding:10px 4px;text-align:right;color:#2563eb;">${fmtMoney(d.regularAmount||d.regTotal||0)}</td>
+      <td style="padding:10px 4px;text-align:right;font-weight:700;color:#111827;">${fmtMoney(d.total||0)}</td>
+    </tr>`;
+  }).join('');
 }
 
-document.getElementById('closeEditMasterModal').addEventListener('click', () => {
-  document.getElementById('editMasterModal').classList.remove('open');
-});
-
-document.getElementById('editMasterModal').addEventListener('click', function(e) {
-  if (e.target === this) this.classList.remove('open');
-});
-
-document.getElementById('confirmEditMasterBtn').addEventListener('click', async function() {
-  const rowIndex = Number(document.getElementById('editMasterRowIndex').value);
-  const type = document.getElementById('editMasterType').value.trim();
-  const amount = Number(document.getElementById('editMasterAmount').value);
-  const desc = document.getElementById('editMasterDesc').value.trim();
-  if (!rowIndex || !type || !amount) {
-    showToast('全項目を入力してください', true); return;
-  }
-  this.disabled = true;
-  try {
-    const res = await apiPost({ action: 'updateMaster', rowIndex, type, amount, description: desc });
-    if (res.success) {
-      showToast('✅ マスタを更新しました');
-      document.getElementById('editMasterModal').classList.remove('open');
-      await loadMaster();
-    } else {
-      showToast(res.message, true);
-    }
-  } catch(e) {
-    showToast('マスタ更新エラー', true);
-  } finally {
-    this.disabled = false;
-  }
-});
-
-// ========== マスタ削除 ==========
-
-async function deleteMaster(rowIndex, type) {
-  if (!confirm(`「${type}」を無効化しますか？`)) return;
-  try {
-    const res = await apiPost({ action: 'deleteMaster', rowIndex });
-    if (res.success) {
-      showToast('🗑 マスタを無効化しました');
-      await loadMaster();
-    } else {
-      showToast(res.message, true);
-    }
-  } catch(e) {
-    showToast('マスタ削除エラー', true);
-  }
+function switchChartTab(tab) {
+  currentChartTab = tab;
+  document.getElementById('chart-tab-monthly').classList.toggle('active', tab === 'monthly');
+  document.getElementById('chart-tab-yearly').classList.toggle('active', tab === 'yearly');
+  document.getElementById('chart-monthly-wrap').style.display = tab === 'monthly' ? 'block' : 'none';
+  document.getElementById('chart-yearly-wrap').style.display = tab === 'yearly' ? 'block' : 'none';
 }
 
-// ========== 経理 ==========
-
-function initAccSelects() {
+// ============================================================
+//  ACCOUNTING
+// ============================================================
+function initAccountingPicker() {
+  const yearSel = document.getElementById('accounting-year');
+  const monthSel = document.getElementById('accounting-month');
   const now = new Date();
-  const yearSel = document.getElementById('accYear');
-  const monthSel = document.getElementById('accMonth');
   for (let y = now.getFullYear(); y >= now.getFullYear()-3; y--) {
-    yearSel.innerHTML += `<option value="${y}">${y}年</option>`;
+    yearSel.innerHTML += `<option value="${y}" ${y===now.getFullYear()?'selected':''}>${y}年</option>`;
   }
   for (let m = 1; m <= 12; m++) {
-    monthSel.innerHTML += `<option value="${m}" ${m === now.getMonth()+1 ? 'selected' : ''}>${m}月</option>`;
+    monthSel.innerHTML += `<option value="${m}" ${m===now.getMonth()+1?'selected':''}>${m}月</option>`;
   }
 }
 
-document.getElementById('genAccBtn').addEventListener('click', async function() {
-  const year = Number(document.getElementById('accYear').value);
-  const month = Number(document.getElementById('accMonth').value);
-  document.getElementById('genAccBtnText').textContent = '生成中…';
-  document.getElementById('genAccSpinner').classList.remove('hidden');
-  document.getElementById('accResult').classList.add('hidden');
-  this.disabled = true;
+async function generateAccountingSheet() {
+  const year = document.getElementById('accounting-year').value;
+  const month = document.getElementById('accounting-month').value;
+  const btn = document.getElementById('accounting-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> 生成中...';
   try {
-    const res = await apiPost({ action: 'generateAccounting', year, month });
-    if (res.success) {
-      document.getElementById('accResultMsg').textContent = res.message;
-      document.getElementById('accSheetLink').href = res.spreadsheetUrl || SPREADSHEET_URL;
-      document.getElementById('accResult').classList.remove('hidden');
-      showToast('✅ 経理シートを生成しました');
+    const res = await api('generateAccountingSheet', { body: { year: parseInt(year), month: parseInt(month) } });
+    const url = res.url || res.spreadsheetUrl || '';
+    if (url) {
+      document.getElementById('accounting-link').href = url;
+      document.getElementById('accounting-result').style.display = 'block';
+      showToast('✅ シートを生成しました');
     } else {
-      showToast(res.message, true);
+      showToast('✅ 完了しました');
     }
   } catch(e) {
-    showToast('経理シート生成エラー', true);
+    showToast('❌ エラーが発生しました', 2500);
   } finally {
-    document.getElementById('genAccBtnText').textContent = '📑 経理シートを生成する';
-    document.getElementById('genAccSpinner').classList.add('hidden');
-    this.disabled = false;
+    btn.disabled = false; btn.textContent = '生成する';
   }
-});
+}
 
-// ========== タブ切り替え ==========
+// ============================================================
+//  BACKUP
+// ============================================================
+async function doBackup() {
+  const btn = document.getElementById('backup-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> バックアップ中...';
+  try {
+    const res = await api('backup', { body: {} });
+    const now = new Date();
+    const ts = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    document.getElementById('last-backup').textContent = ts;
+    localStorage.setItem('lastBackup', ts);
+    showToast('✅ バックアップ完了');
+  } catch(e) {
+    showToast('❌ バックアップに失敗しました', 2500);
+  } finally {
+    btn.disabled = false; btn.textContent = '今すぐバックアップ';
+  }
+}
 
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', function() {
-    const tab = this.dataset.tab;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => {
-      c.classList.remove('active');
-      c.classList.remove('fade-in');
-    });
-    this.classList.add('active');
-    const el = document.getElementById('tab-' + tab);
-    el.classList.add('active');
-    setTimeout(() => el.classList.add('fade-in'), 10);
-
-    // タブ固有の読込
-    if (tab === 'input') loadHistory();
-    if (tab === 'stats') loadStats();
-    if (tab === 'master') loadMaster();
-  });
-});
-
-// ========== ヘルパー ==========
-
+// ============================================================
+//  UTILS
+// ============================================================
 function escHtml(str) {
-  return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 
-// ========== 初期化 ==========
-
+// ============================================================
+//  INIT
+// ============================================================
 async function init() {
-  updateHeaderDate();
-  initStatsSelects();
-  initAccSelects();
-  await loadMaster();
-  await loadTodayStats();
+  // Date display
+  const now = new Date();
+  const weekdays = ['日','月','火','水','木','金','土'];
+  document.getElementById('today-date').textContent = `${now.getMonth()+1}月${now.getDate()}日`;
+  document.getElementById('today-day').textContent = `${weekdays[now.getDay()]}曜日`;
+
+  // Accounting picker
+  initAccountingPicker();
+
+  // Restore last backup
+  const lb = localStorage.getItem('lastBackup');
+  if (lb) document.getElementById('last-backup').textContent = lb;
+
+  // Load data
+  try {
+    await loadMaster();
+    await refreshHome();
+  } catch(e) {
+    console.error('init error', e);
+  }
+
+  // Hide loading
+  document.getElementById('loading-overlay').style.display = 'none';
 }
+
+// Close modal on overlay click
+document.getElementById('master-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeMasterModal();
+});
 
 init();
 </script>
