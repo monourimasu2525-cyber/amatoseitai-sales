@@ -516,14 +516,13 @@ async function loadInitData() {
   const lsCached = lsGet('initData');
   if (lsCached) applyInitData(lsCached);
   try {
-    const d = await apiGet({ action:'initData' });
-    // initDataが成功し必要なキーが揃っているか確認
+    // initDataはPOSTで呼ぶ（GAS GETのCORSリダイレクト問題を回避）
+    const d = await apiPost({ action:'initData' });
     if (d && d.master && d.todayStats && d.thisMonth && d.prevMonth && d.history) {
       lsSet('initData', d);
       memSet('initData', d);
       applyInitData(d);
     } else {
-      // フォールバック：旧API並列呼び出し
       await loadInitDataFallback(lsCached);
     }
   } catch(e) {

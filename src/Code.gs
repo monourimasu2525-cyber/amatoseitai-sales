@@ -34,6 +34,22 @@ function doPost(e) {
       case 'backup':
         result = runBackup();
         break;
+      case 'initData': {
+        // フロント初回ロード用：全データを1発で返す（POST経由）
+        const now = new Date();
+        const curYear  = now.getFullYear();
+        const curMonth = now.getMonth() + 1;
+        const prevMonth = curMonth === 1 ? 12 : curMonth - 1;
+        const prevYear  = curMonth === 1 ? curYear - 1 : curYear;
+        result = {
+          master:     getMasterItems(),
+          todayStats: manager.getTodayStats(),
+          thisMonth:  manager.getMonthStats(curYear, curMonth),
+          prevMonth:  manager.getMonthStats(prevYear, prevMonth),
+          history:    { records: manager.getRecentHistory(30) }
+        };
+        break;
+      }
       case 'updateSummary':
         result = updateSummarySheet();
         break;
