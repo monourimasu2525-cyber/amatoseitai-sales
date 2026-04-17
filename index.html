@@ -71,47 +71,48 @@
 
 <!-- ===== ホーム ===== -->
 <div id="page-home" class="page active" style="padding-bottom:72px;">
-  <!-- KPIバー -->
-  <div style="background:var(--card);border-bottom:1px solid var(--border);padding:12px 16px;">
-    <div class="scrollbar-hide" style="display:flex;gap:8px;overflow-x:auto;max-width:480px;margin:0 auto;">
-      <div style="min-width:148px;flex-shrink:0;background:var(--accent);border-radius:12px;padding:12px 14px;">
-        <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px;">今月売上</div>
-        <div id="kpi_month" style="font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.5px;"><span class="skel" style="display:inline-block;width:80px;height:20px;opacity:0.3;"></span></div>
-        <div id="kpi_month_diff" style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:3px;"><span class="skel" style="display:inline-block;width:56px;height:12px;opacity:0.25;"></span></div>
-      </div>
-      <div style="min-width:126px;flex-shrink:0;" class="card">
-        <div style="padding:12px 13px;">
-          <div style="font-size:11px;color:var(--sub2);margin-bottom:4px;">今日の売上</div>
-          <div id="kpi_today" style="font-size:18px;font-weight:700;letter-spacing:-0.5px;"><span class="skel" style="display:inline-block;width:70px;height:20px;"></span></div>
-          <div id="kpi_today_count" style="font-size:11px;color:var(--sub2);margin-top:3px;"><span class="skel" style="display:inline-block;width:36px;height:12px;"></span></div>
+
+  <!-- 今日の売上ヒーロー -->
+  <div style="background:var(--accent);padding:20px 16px 16px;">
+    <div style="max-width:480px;margin:0 auto;">
+      <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px;" id="heroDate">— 年 — 月 — 日</div>
+      <div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:12px;">
+        <div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:2px;">今日の売上</div>
+          <div id="kpi_today" style="font-size:38px;font-weight:800;color:#fff;letter-spacing:-1.5px;line-height:1;"><span class="skel" style="display:inline-block;width:120px;height:36px;opacity:0.3;"></span></div>
         </div>
+        <div id="kpi_today_count" style="font-size:14px;color:rgba(255,255,255,0.55);padding-bottom:4px;"><span class="skel" style="display:inline-block;width:30px;height:16px;opacity:0.25;"></span></div>
       </div>
-      <div style="min-width:108px;flex-shrink:0;" class="card">
-        <div style="padding:12px 13px;">
-          <div style="font-size:11px;color:var(--sub2);margin-bottom:4px;">新規</div>
-          <div id="kpi_shinki" style="font-size:18px;font-weight:700;letter-spacing:-0.5px;"><span class="skel" style="display:inline-block;width:64px;height:20px;"></span></div>
-          <div id="kpi_shinki_count" style="font-size:11px;color:var(--sub2);margin-top:3px;"><span class="skel" style="display:inline-block;width:28px;height:12px;"></span></div>
+      <!-- 今日の内訳 -->
+      <div style="display:flex;gap:8px;">
+        <div style="flex:1;background:rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;border:1px solid rgba(255,255,255,0.12);">
+          <div style="font-size:10px;color:rgba(255,255,255,0.45);margin-bottom:3px;">新規</div>
+          <div id="kpi_shinki" style="font-size:16px;font-weight:700;color:#fff;"><span class="skel" style="display:inline-block;width:60px;height:18px;opacity:0.25;"></span></div>
+          <div id="kpi_shinki_count" style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:1px;">—</div>
         </div>
-      </div>
-      <div style="min-width:108px;flex-shrink:0;" class="card">
-        <div style="padding:12px 13px;">
-          <div style="font-size:11px;color:var(--sub2);margin-bottom:4px;">常連</div>
-          <div id="kpi_joren" style="font-size:18px;font-weight:700;letter-spacing:-0.5px;"><span class="skel" style="display:inline-block;width:64px;height:20px;"></span></div>
-          <div id="kpi_joren_count" style="font-size:11px;color:var(--sub2);margin-top:3px;"><span class="skel" style="display:inline-block;width:28px;height:12px;"></span></div>
+        <div style="flex:1;background:rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;border:1px solid rgba(255,255,255,0.12);">
+          <div style="font-size:10px;color:rgba(255,255,255,0.45);margin-bottom:3px;">常連</div>
+          <div id="kpi_joren" style="font-size:16px;font-weight:700;color:#fff;"><span class="skel" style="display:inline-block;width:60px;height:18px;opacity:0.25;"></span></div>
+          <div id="kpi_joren_count" style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:1px;">—</div>
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px;border:1px solid rgba(255,255,255,0.08);">
+          <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:3px;">今月</div>
+          <div id="kpi_month" style="font-size:16px;font-weight:700;color:rgba(255,255,255,0.75);"><span class="skel" style="display:inline-block;width:60px;height:18px;opacity:0.2;"></span></div>
+          <div id="kpi_month_diff" style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:1px;">—</div>
         </div>
       </div>
     </div>
   </div>
 
   <div style="max-width:480px;margin:0 auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px;">
-    <!-- グラフ -->
+    <!-- グラフ（デフォルト今月） -->
     <div class="card" style="padding:16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
         <span style="font-size:13px;font-weight:700;">売上推移</span>
         <div style="display:flex;gap:4px;">
-          <button id="pbtn7"  onclick="setPeriod(7)"  style="padding:4px 11px;border-radius:6px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:var(--accent);color:#fff;">7日</button>
+          <button id="pbtn7"  onclick="setPeriod(7)"  style="padding:4px 11px;border-radius:6px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:var(--card2);color:var(--sub);">7日</button>
           <button id="pbtn15" onclick="setPeriod(15)" style="padding:4px 11px;border-radius:6px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:var(--card2);color:var(--sub);">15日</button>
-          <button id="pbtn30" onclick="setPeriod(30)" style="padding:4px 11px;border-radius:6px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:var(--card2);color:var(--sub);">30日</button>
+          <button id="pbtn30" onclick="setPeriod(30)" style="padding:4px 11px;border-radius:6px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:var(--accent);color:#fff;">30日</button>
         </div>
       </div>
       <div id="trendSpinner" style="display:flex;justify-content:center;padding:24px 0;"><div class="spinner" style="width:24px;height:24px;"></div></div>
@@ -143,7 +144,6 @@
     </div>
   </div>
 </div>
-
 <!-- ===== 入力 ===== -->
 <div id="page-input" class="page" style="padding-bottom:72px;">
   <div style="max-width:480px;margin:0 auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px;">
@@ -179,32 +179,53 @@
 
     <!-- ① 今月まとめカード -->
     <div style="background:var(--accent);border-radius:14px;padding:20px 18px;box-shadow:0 2px 10px rgba(30,44,58,0.2);">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
         <span id="statsMonthLabel" style="font-size:11px;color:rgba(255,255,255,0.5);font-weight:500;">— 年 — 月</span>
         <div id="statsTopSpinner" class="spinner" style="display:none;width:14px;height:14px;border-color:rgba(255,255,255,0.2);border-top-color:rgba(255,255,255,0.8);"></div>
       </div>
-      <div id="statsTotalSales" style="font-size:34px;font-weight:800;color:#fff;letter-spacing:-1px;line-height:1.1;margin-bottom:6px;">—</div>
-      <div style="display:flex;gap:16px;margin-bottom:14px;">
-        <div>
-          <span style="font-size:11px;color:rgba(255,255,255,0.45);">先月比</span>
-          <span id="statsDiff" style="font-size:13px;font-weight:700;margin-left:4px;color:rgba(255,255,255,0.7);">—</span>
+      <div id="statsTotalSales" style="font-size:36px;font-weight:800;color:#fff;letter-spacing:-1px;line-height:1.1;margin-bottom:10px;">—</div>
+      <!-- 3指標 横並び -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px;">
+        <div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;border:1px solid rgba(255,255,255,0.1);">
+          <div style="font-size:10px;color:rgba(255,255,255,0.45);margin-bottom:3px;">先月比</div>
+          <div id="statsDiff" style="font-size:16px;font-weight:700;color:rgba(255,255,255,0.9);">—</div>
         </div>
-        <div>
-          <span style="font-size:11px;color:rgba(255,255,255,0.45);">件数</span>
-          <span id="statsTotalCount" style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.9);margin-left:4px;">—</span>
+        <div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;border:1px solid rgba(255,255,255,0.1);">
+          <div style="font-size:10px;color:rgba(255,255,255,0.45);margin-bottom:3px;">来院数</div>
+          <div id="statsTotalCount" style="font-size:16px;font-weight:700;color:rgba(255,255,255,0.9);">—</div>
         </div>
-        <div>
-          <span style="font-size:11px;color:rgba(255,255,255,0.45);">客単価</span>
-          <span id="statsUnitPrice" style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.9);margin-left:4px;">—</span>
+        <div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;border:1px solid rgba(255,255,255,0.1);">
+          <div style="font-size:10px;color:rgba(255,255,255,0.45);margin-bottom:3px;">客単価</div>
+          <div id="statsUnitPrice" style="font-size:16px;font-weight:700;color:rgba(255,255,255,0.9);">—</div>
         </div>
       </div>
       <div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:10px 12px;border:1px solid rgba(255,255,255,0.1);">
-        <span style="font-size:12px;color:rgba(255,255,255,0.45);margin-right:6px;">💡</span>
+        <span style="font-size:12px;color:rgba(255,255,255,0.4);margin-right:6px;">💡</span>
         <span id="statsSummaryText" style="font-size:13px;color:rgba(255,255,255,0.88);font-weight:500;">データを読み込んでいます…</span>
       </div>
     </div>
 
-    <!-- ② 推移グラフ＋傾向テキスト -->
+    <!-- ② 新規・常連カード -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div class="card" style="padding:14px 16px;">
+        <div style="font-size:11px;color:var(--sub2);margin-bottom:6px;">新規</div>
+        <div id="statsShinkiSales" style="font-size:22px;font-weight:800;color:var(--accent);letter-spacing:-0.5px;">—</div>
+        <div id="statsShinkiCount" style="font-size:12px;color:var(--sub2);margin-top:3px;">— 件</div>
+        <div style="margin-top:8px;height:4px;background:var(--card2);border-radius:4px;overflow:hidden;">
+          <div id="statsShinkiBar" style="height:100%;background:var(--accent);border-radius:4px;width:0%;transition:width 0.6s ease;"></div>
+        </div>
+      </div>
+      <div class="card" style="padding:14px 16px;">
+        <div style="font-size:11px;color:var(--sub2);margin-bottom:6px;">常連</div>
+        <div id="statsJorenSales" style="font-size:22px;font-weight:800;color:var(--sub);letter-spacing:-0.5px;">—</div>
+        <div id="statsJorenCount" style="font-size:12px;color:var(--sub2);margin-top:3px;">— 件</div>
+        <div style="margin-top:8px;height:4px;background:var(--card2);border-radius:4px;overflow:hidden;">
+          <div id="statsJorenBar" style="height:100%;background:var(--sub2);border-radius:4px;width:0%;transition:width 0.6s ease;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ③ 推移グラフ -->
     <div class="card" style="padding:16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
         <span style="font-size:13px;font-weight:700;">売上の流れ</span>
@@ -215,12 +236,10 @@
       <div id="statsLineWrap" style="height:140px;display:none;"><canvas id="statsLineChart"></canvas></div>
     </div>
 
-    <!-- ③ 気づきカード 2×2 -->
-    <div id="insightGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <!-- 動的生成 -->
-    </div>
+    <!-- ④ 気づきカード -->
+    <div id="insightGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
 
-    <!-- ④ 詳細（折りたたみ） -->
+    <!-- ⑤ 詳細（折りたたみ） -->
     <div class="card" style="overflow:hidden;">
       <button onclick="toggleDetail()" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:none;border:none;cursor:pointer;">
         <span style="font-size:13px;font-weight:600;color:var(--sub);">期間変更・詳細データ</span>
@@ -242,7 +261,6 @@
 
   </div>
 </div>
-
 <!-- ===== 設定 ===== -->
 <div id="page-settings" class="page" style="padding-bottom:72px;">
   <div style="max-width:480px;margin:0 auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px;">
@@ -374,7 +392,7 @@ const SS_URL  = 'https://docs.google.com/spreadsheets/d/17bAyQngDEjoDgqSLLUU5p45
 let masterItems = [];
 let trendChartObj = null, statsLineObj = null, compareChartObj = null;
 let trendAllLabels = [], trendAllData = [];
-let currentPeriod = 7;
+let currentPeriod = 30;
 let detailOpen = false;
 
 // ===== ユーティリティ =====
@@ -570,6 +588,10 @@ function applyInitData(d) {
 }
 
 function applyHomeData({ today, thisM, prevM, history }) {
+  // ヒーロー：今日の売上
+  const now = new Date();
+  const heroDateEl = document.getElementById('heroDate');
+  if (heroDateEl) heroDateEl.textContent = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
   document.getElementById('kpi_today').textContent = fmt(today.totalSales);
   document.getElementById('kpi_today_count').textContent = `${today.totalCount}件`;
   document.getElementById('kpi_shinki').textContent = fmt(today.shinkiSales);
@@ -581,9 +603,9 @@ function applyHomeData({ today, thisM, prevM, history }) {
   if (prevM.totalSales > 0) {
     const pct = Math.round((thisM.totalSales - prevM.totalSales) / prevM.totalSales * 100);
     const el = document.getElementById('kpi_month_diff');
-    el.textContent = `${pct>=0?'▲':'▼'}${Math.abs(pct)}% 先月比`;
+    el.textContent = `${pct>=0?'▲':'▼'}${Math.abs(pct)}%`;
     el.style.color = pct>=0 ? '#6ee7b7' : '#fca5a5';
-  } else { document.getElementById('kpi_month_diff').textContent = ''; }
+  } else { document.getElementById('kpi_month_diff').textContent = '先月なし'; }
   applyTodayHistory(history);
   applyTrendData(history);
 }
@@ -808,10 +830,24 @@ async function loadStatsAuto() {
     // 一言サマリー自動生成
     document.getElementById('statsSummaryText').textContent = generateSummary(cur, prev, unitPrice);
 
+    // ② 新規・常連カード
+    const shinkiEl = document.getElementById('statsShinkiSales');
+    const jorenEl  = document.getElementById('statsJorenSales');
+    if (shinkiEl) {
+      shinkiEl.textContent = fmt(cur.shinkiSales||0);
+      document.getElementById('statsShinkiCount').textContent = `${cur.shinkiCount||0} 件`;
+      jorenEl.textContent  = fmt(cur.jorenSales||0);
+      document.getElementById('statsJorenCount').textContent  = `${cur.jorenCount||0} 件`;
+      // プログレスバー
+      const total = cur.totalSales || 1;
+      document.getElementById('statsShinkiBar').style.width = Math.round((cur.shinkiSales||0)/total*100) + '%';
+      document.getElementById('statsJorenBar').style.width  = Math.round((cur.jorenSales||0)/total*100) + '%';
+    }
+
     // ③ 気づきカード自動生成
     renderInsightGrid(cur, prev, unitPrice);
 
-    // ② 推移グラフ（日別）
+    // ④ 推移グラフ（日別）
     await loadStatsLineChart(year, month, cur);
 
     // 詳細パネルの比較グラフ（開いていれば）
