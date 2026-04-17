@@ -43,6 +43,9 @@
   .toast.show{transform:translateY(0);opacity:1;}
   .modal{display:none;} .modal.open{display:flex;}
   input,select{font-family:inherit;}
+  /* スケルトン */
+  .skel{background:linear-gradient(90deg,var(--card2) 25%,var(--border) 50%,var(--card2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px;}
+  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 </style>
 </head>
 <body>
@@ -70,28 +73,28 @@
     <div class="scrollbar-hide" style="display:flex;gap:8px;overflow-x:auto;max-width:480px;margin:0 auto;">
       <div style="min-width:148px;flex-shrink:0;background:var(--accent);border-radius:12px;padding:12px 14px;">
         <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px;">今月売上</div>
-        <div id="kpi_month" style="font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.5px;">—</div>
-        <div id="kpi_month_diff" style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:3px;">—</div>
+        <div id="kpi_month" style="font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.5px;"><span class="skel" style="display:inline-block;width:80px;height:20px;opacity:0.3;"></span></div>
+        <div id="kpi_month_diff" style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:3px;"><span class="skel" style="display:inline-block;width:56px;height:12px;opacity:0.25;"></span></div>
       </div>
       <div style="min-width:126px;flex-shrink:0;" class="card">
         <div style="padding:12px 13px;">
           <div style="font-size:11px;color:var(--sub2);margin-bottom:4px;">今日の売上</div>
-          <div id="kpi_today" style="font-size:18px;font-weight:700;letter-spacing:-0.5px;">—</div>
-          <div id="kpi_today_count" style="font-size:11px;color:var(--sub2);margin-top:3px;">—</div>
+          <div id="kpi_today" style="font-size:18px;font-weight:700;letter-spacing:-0.5px;"><span class="skel" style="display:inline-block;width:70px;height:20px;"></span></div>
+          <div id="kpi_today_count" style="font-size:11px;color:var(--sub2);margin-top:3px;"><span class="skel" style="display:inline-block;width:36px;height:12px;"></span></div>
         </div>
       </div>
       <div style="min-width:108px;flex-shrink:0;" class="card">
         <div style="padding:12px 13px;">
           <div style="font-size:11px;color:var(--sub2);margin-bottom:4px;">新規</div>
-          <div id="kpi_shinki" style="font-size:18px;font-weight:700;letter-spacing:-0.5px;">—</div>
-          <div id="kpi_shinki_count" style="font-size:11px;color:var(--sub2);margin-top:3px;">—</div>
+          <div id="kpi_shinki" style="font-size:18px;font-weight:700;letter-spacing:-0.5px;"><span class="skel" style="display:inline-block;width:64px;height:20px;"></span></div>
+          <div id="kpi_shinki_count" style="font-size:11px;color:var(--sub2);margin-top:3px;"><span class="skel" style="display:inline-block;width:28px;height:12px;"></span></div>
         </div>
       </div>
       <div style="min-width:108px;flex-shrink:0;" class="card">
         <div style="padding:12px 13px;">
           <div style="font-size:11px;color:var(--sub2);margin-bottom:4px;">常連</div>
-          <div id="kpi_joren" style="font-size:18px;font-weight:700;letter-spacing:-0.5px;">—</div>
-          <div id="kpi_joren_count" style="font-size:11px;color:var(--sub2);margin-top:3px;">—</div>
+          <div id="kpi_joren" style="font-size:18px;font-weight:700;letter-spacing:-0.5px;"><span class="skel" style="display:inline-block;width:64px;height:20px;"></span></div>
+          <div id="kpi_joren_count" style="font-size:11px;color:var(--sub2);margin-top:3px;"><span class="skel" style="display:inline-block;width:28px;height:12px;"></span></div>
         </div>
       </div>
     </div>
@@ -126,7 +129,11 @@
         <span style="font-size:13px;font-weight:700;">今日の記録</span>
         <span id="todayBadge" style="font-size:11px;background:var(--accent-l);color:var(--accent);padding:3px 10px;border-radius:20px;font-weight:600;border:1px solid var(--accent-m);">0件</span>
       </div>
-      <div id="todayList" style="font-size:13px;color:var(--sub2);">読込中…</div>
+      <div id="todayList" style="font-size:13px;">
+        <div class="skel" style="height:38px;margin-bottom:8px;"></div>
+        <div class="skel" style="height:38px;margin-bottom:8px;opacity:0.7;"></div>
+        <div class="skel" style="height:38px;opacity:0.4;"></div>
+      </div>
       <div style="text-align:right;margin-top:8px;">
         <button onclick="switchPage('input')" style="font-size:12px;color:var(--sub);background:none;border:none;cursor:pointer;">すべて見る →</button>
       </div>
@@ -474,77 +481,106 @@ function renderQuickBtns() {
   }).join('');
 }
 
-// ===== 今日の統計 =====
-async function loadTodayStats() {
-  try {
-    const d = await apiGet({ action:'getTodayStats' });
-    document.getElementById('kpi_today').textContent = fmt(d.totalSales);
-    document.getElementById('kpi_today_count').textContent = `${d.totalCount}件`;
-    document.getElementById('kpi_shinki').textContent = fmt(d.shinkiSales);
-    document.getElementById('kpi_shinki_count').textContent = `${d.shinkiCount}件`;
-    document.getElementById('kpi_joren').textContent = fmt(d.jorenSales);
-    document.getElementById('kpi_joren_count').textContent = `${d.jorenCount}件`;
-    document.getElementById('todayBadge').textContent = `${d.totalCount}件`;
-
-    // 今月 & 先月
-    const now = new Date();
-    const [thisM, prevM] = await Promise.all([
-      apiGet({ action:'getMonthStats', year:now.getFullYear(), month:now.getMonth()+1 }),
-      apiGet({ action:'getMonthStats', year:now.getFullYear(), month:now.getMonth() || 12 })
-    ]);
-    document.getElementById('kpi_month').textContent = fmt(thisM.totalSales);
-    if (prevM.totalSales > 0) {
-      const pct = Math.round((thisM.totalSales - prevM.totalSales) / prevM.totalSales * 100);
-      const el = document.getElementById('kpi_month_diff');
-      el.textContent = `${pct>=0?'▲':'▼'}${Math.abs(pct)}% 先月比`;
-      el.style.color = pct>=0 ? '#6ee7b7' : '#fca5a5';
-    }
-
-    await loadTodayHistory();
-    await loadTrendData();
-  } catch(e) { document.getElementById('kpi_today').textContent = 'エラー'; }
+// ===== キャッシュ =====
+const cache = {};
+function cacheSet(key, val) { cache[key] = { val, ts: Date.now() }; }
+function cacheGet(key, ttlMs=60000) {
+  const c = cache[key];
+  return (c && Date.now()-c.ts < ttlMs) ? c.val : null;
 }
 
-async function loadTodayHistory() {
+// ===== 今日の統計（並列化・キャッシュ対応） =====
+async function loadTodayStats() {
+  const now = new Date();
+  const curMonth = now.getMonth()+1;
+  const prevMonth = curMonth === 1 ? 12 : curMonth - 1;
+  const prevYear  = curMonth === 1 ? now.getFullYear()-1 : now.getFullYear();
+
+  // キャッシュがあれば即表示（60秒TTL）
+  const cached = cacheGet('homeAll');
+  if (cached) { applyHomeData(cached); }
+
   try {
-    const d = await apiGet({ action:'getRecentHistory', days:1 });
-    const records = (d.records || []).slice(0, 6);
-    const el = document.getElementById('todayList');
-    if (!records.length) { el.innerHTML = '<div style="text-align:center;color:var(--sub2);padding:12px 0;">まだ記録がありません</div>'; return; }
-    el.innerHTML = records.map(r => `
-      <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
-        <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;flex-shrink:0;
-          ${r.type==='新規'?'background:var(--accent-l);color:var(--accent);border:1px solid var(--accent-m);':'background:var(--card2);color:var(--sub);border:1px solid var(--border);'}">${r.type}</span>
-        <span style="font-size:14px;font-weight:600;flex:1;">${fmt(r.amount)}</span>
-        <span style="font-size:11px;color:var(--sub2);">${r.time}</span>
-        <button onclick="deleteSale(${r.rowIndex},'今日')" style="font-size:11px;color:var(--sub2);background:none;border:none;cursor:pointer;padding:2px 6px;">取消</button>
-      </div>
-    `).join('');
-  } catch(e) {}
+    // 3リクエスト同時発行（getRecentHistory days:30 で今日分・グラフ両方賄う）
+    const [today, thisM, prevM, history] = await Promise.all([
+      apiGet({ action:'getTodayStats' }),
+      apiGet({ action:'getMonthStats', year:now.getFullYear(), month:curMonth }),
+      apiGet({ action:'getMonthStats', year:prevYear, month:prevMonth }),
+      apiGet({ action:'getRecentHistory', days:30 })
+    ]);
+    const bundle = { today, thisM, prevM, history };
+    cacheSet('homeAll', bundle);
+    applyHomeData(bundle);
+  } catch(e) {
+    if (!cached) document.getElementById('kpi_today').textContent = 'エラー';
+  }
+}
+
+function applyHomeData({ today, thisM, prevM, history }) {
+  // KPI今日
+  document.getElementById('kpi_today').textContent = fmt(today.totalSales);
+  document.getElementById('kpi_today_count').textContent = `${today.totalCount}件`;
+  document.getElementById('kpi_shinki').textContent = fmt(today.shinkiSales);
+  document.getElementById('kpi_shinki_count').textContent = `${today.shinkiCount}件`;
+  document.getElementById('kpi_joren').textContent = fmt(today.jorenSales);
+  document.getElementById('kpi_joren_count').textContent = `${today.jorenCount}件`;
+  document.getElementById('todayBadge').textContent = `${today.totalCount}件`;
+
+  // KPI今月
+  document.getElementById('kpi_month').textContent = fmt(thisM.totalSales);
+  if (prevM.totalSales > 0) {
+    const pct = Math.round((thisM.totalSales - prevM.totalSales) / prevM.totalSales * 100);
+    const el = document.getElementById('kpi_month_diff');
+    el.textContent = `${pct>=0?'▲':'▼'}${Math.abs(pct)}% 先月比`;
+    el.style.color = pct>=0 ? '#6ee7b7' : '#fca5a5';
+  } else {
+    document.getElementById('kpi_month_diff').textContent = '';
+  }
+
+  // 今日の履歴
+  applyTodayHistory(history);
+
+  // トレンドグラフ
+  applyTrendData(history);
+}
+
+function applyTodayHistory(history) {
+  const records = (history.records || []).filter(r => {
+    const now = new Date();
+    const today = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
+    return r.date === today;
+  }).slice(0, 6);
+  const el = document.getElementById('todayList');
+  if (!records.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--sub2);padding:12px 0;">まだ記録がありません</div>';
+    return;
+  }
+  el.innerHTML = records.map(r => `
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;flex-shrink:0;
+        ${r.type==='新規'?'background:var(--accent-l);color:var(--accent);border:1px solid var(--accent-m);':'background:var(--card2);color:var(--sub);border:1px solid var(--border);'}">${r.type}</span>
+      <span style="font-size:14px;font-weight:600;flex:1;">${fmt(r.amount)}</span>
+      <span style="font-size:11px;color:var(--sub2);">${r.time}</span>
+      <button onclick="deleteSale(${r.rowIndex},'今日')" style="font-size:11px;color:var(--sub2);background:none;border:none;cursor:pointer;padding:2px 6px;">取消</button>
+    </div>
+  `).join('');
 }
 
 // ===== トレンドグラフ =====
-async function loadTrendData() {
-  document.getElementById('trendSpinner').style.display = 'flex';
-  document.getElementById('trendWrap').style.display = 'none';
-  try {
-    const d = await apiGet({ action:'getRecentHistory', days:30 });
-    const records = d.records || [];
-    const dayMap = {};
-    records.forEach(r => { dayMap[r.date] = (dayMap[r.date]||0) + r.amount; });
-    trendAllLabels = []; trendAllData = [];
-    for (let i=29; i>=0; i--) {
-      const dt = new Date(); dt.setDate(dt.getDate()-i);
-      const key = `${dt.getFullYear()}/${dt.getMonth()+1}/${dt.getDate()}`;
-      trendAllLabels.push(`${dt.getMonth()+1}/${dt.getDate()}`);
-      trendAllData.push(dayMap[key]||0);
-    }
-    renderTrendChart(currentPeriod);
-  } catch(e) {}
-  finally {
-    document.getElementById('trendSpinner').style.display = 'none';
-    document.getElementById('trendWrap').style.display = 'block';
+function applyTrendData(history) {
+  document.getElementById('trendSpinner').style.display = 'none';
+  document.getElementById('trendWrap').style.display = 'block';
+  const records = history.records || [];
+  const dayMap = {};
+  records.forEach(r => { dayMap[r.date] = (dayMap[r.date]||0) + r.amount; });
+  trendAllLabels = []; trendAllData = [];
+  for (let i=29; i>=0; i--) {
+    const dt = new Date(); dt.setDate(dt.getDate()-i);
+    const key = `${dt.getFullYear()}/${dt.getMonth()+1}/${dt.getDate()}`;
+    trendAllLabels.push(`${dt.getMonth()+1}/${dt.getDate()}`);
+    trendAllData.push(dayMap[key]||0);
   }
+  renderTrendChart(currentPeriod);
 }
 
 function renderTrendChart(period) {
@@ -584,8 +620,11 @@ function setPeriod(p) {
 async function quickAdd(type, amount) {
   try {
     const r = await apiPost({ action:'addSale', type, amount:Number(amount) });
-    if (r.success) { showToast(`✅ ${type} ${fmt(amount)}`); loadTodayStats(); }
-    else showToast(r.message, true);
+    if (r.success) {
+      showToast(`✅ ${type} ${fmt(amount)}`);
+      delete cache['homeAll']; delete cache['history'];
+      loadTodayStats();
+    } else showToast(r.message, true);
   } catch(e) { showToast('登録エラー', true); }
 }
 
@@ -598,42 +637,54 @@ document.getElementById('addSaleBtn').addEventListener('click', async function()
   document.getElementById('addSaleSpinner').style.display = 'block';
   try {
     const r = await apiPost({ action:'addSale', type, amount });
-    if (r.success) { showToast(`✅ ${type} ${fmt(amount)}`); loadHistory(); loadTodayStats(); }
-    else showToast(r.message, true);
+    if (r.success) {
+      showToast(`✅ ${type} ${fmt(amount)}`);
+      delete cache['homeAll']; delete cache['history'];
+      loadHistory(); loadTodayStats();
+    } else showToast(r.message, true);
   } catch(e) { showToast('登録エラー', true); }
   finally { this.disabled=false; document.getElementById('addSaleSpinner').style.display='none'; }
 });
 
-// ===== 履歴 =====
 async function loadHistory() {
   document.getElementById('histSpinner').style.display = 'block';
+
+  // キャッシュ即表示（30秒TTL）
+  const cached = cacheGet('history', 30000);
+  if (cached) renderHistory(cached);
+
   try {
     const d = await apiGet({ action:'getRecentHistory', days:30 });
-    const records = d.records || [];
-    const el = document.getElementById('historyList');
-    if (!records.length) { el.innerHTML = '<div style="text-align:center;color:var(--sub2);padding:16px;">履歴がありません</div>'; return; }
-    const groups = {};
-    records.forEach(r => { if (!groups[r.date]) groups[r.date]=[]; groups[r.date].push(r); });
-    el.innerHTML = Object.entries(groups).map(([date, items]) => `
-      <div style="margin-bottom:4px;">
-        <div style="font-size:11px;color:var(--sub2);font-weight:600;padding:8px 0 4px;">${date}</div>
-        ${items.map(r => `
-          <div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);">
-            <span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;flex-shrink:0;
-              ${r.type==='新規'?'background:var(--accent-l);color:var(--accent);border:1px solid var(--accent-m);':'background:var(--card2);color:var(--sub);border:1px solid var(--border);'}">${r.type}</span>
-            <span style="font-size:14px;font-weight:600;flex:1;">${fmt(r.amount)}</span>
-            <span style="font-size:11px;color:var(--sub2);">${r.time}</span>
-            <button onclick="openEditSale(${r.rowIndex},'${escQ(r.type)}',${r.amount})" style="font-size:13px;background:none;border:none;cursor:pointer;color:var(--sub2);padding:3px;">✏️</button>
-            <button onclick="deleteSale(${r.rowIndex},'${date}')" style="font-size:13px;background:none;border:none;cursor:pointer;color:var(--sub2);padding:3px;">🗑</button>
-          </div>
-        `).join('')}
-      </div>
-    `).join('');
-  } catch(e) { document.getElementById('historyList').innerHTML = '<div style="text-align:center;color:var(--red);padding:16px;">読込エラー</div>'; }
+    cacheSet('history', d);
+    renderHistory(d);
+  } catch(e) {
+    if (!cached) document.getElementById('historyList').innerHTML = '<div style="text-align:center;color:var(--red);padding:16px;">読込エラー</div>';
+  }
   finally { document.getElementById('histSpinner').style.display='none'; }
 }
 
-// ===== 修正 =====
+function renderHistory(d) {
+  const records = d.records || [];
+  const el = document.getElementById('historyList');
+  if (!records.length) { el.innerHTML = '<div style="text-align:center;color:var(--sub2);padding:16px;">履歴がありません</div>'; return; }
+  const groups = {};
+  records.forEach(r => { if (!groups[r.date]) groups[r.date]=[]; groups[r.date].push(r); });
+  el.innerHTML = Object.entries(groups).map(([date, items]) => `
+    <div style="margin-bottom:4px;">
+      <div style="font-size:11px;color:var(--sub2);font-weight:600;padding:8px 0 4px;">${date}</div>
+      ${items.map(r => `
+        <div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);">
+          <span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;flex-shrink:0;
+            ${r.type==='新規'?'background:var(--accent-l);color:var(--accent);border:1px solid var(--accent-m);':'background:var(--card2);color:var(--sub);border:1px solid var(--border);'}">${r.type}</span>
+          <span style="font-size:14px;font-weight:600;flex:1;">${fmt(r.amount)}</span>
+          <span style="font-size:11px;color:var(--sub2);">${r.time}</span>
+          <button onclick="openEditSale(${r.rowIndex},'${escQ(r.type)}',${r.amount})" style="font-size:13px;background:none;border:none;cursor:pointer;color:var(--sub2);padding:3px;">✏️</button>
+          <button onclick="deleteSale(${r.rowIndex},'${date}')" style="font-size:13px;background:none;border:none;cursor:pointer;color:var(--sub2);padding:3px;">🗑</button>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
 function openEditSale(rowIndex, type, amount) {
   document.getElementById('editRowIndex').value = rowIndex;
   document.getElementById('editType').value = type;
@@ -650,7 +701,12 @@ document.getElementById('confirmEditBtn').addEventListener('click', async functi
   this.disabled=true;
   try {
     const r = await apiPost({ action:'editSale', rowIndex, type, amount });
-    if (r.success) { showToast('✅ 修正しました'); document.getElementById('editModal').classList.remove('open'); loadHistory(); loadTodayStats(); }
+    if (r.success) {
+      showToast('✅ 修正しました');
+      document.getElementById('editModal').classList.remove('open');
+      delete cache['homeAll']; delete cache['history'];
+      loadHistory(); loadTodayStats();
+    }
     else showToast(r.message,true);
   } catch(e) { showToast('修正エラー',true); }
   finally { this.disabled=false; }
@@ -661,7 +717,11 @@ async function deleteSale(rowIndex, dateStr) {
   if (!confirm(`${dateStr}の売上を削除しますか？`)) return;
   try {
     const r = await apiPost({ action:'deleteSale', rowIndex });
-    if (r.success) { showToast('削除しました'); loadHistory(); loadTodayStats(); }
+    if (r.success) {
+      showToast('削除しました');
+      delete cache['homeAll']; delete cache['history'];
+      loadHistory(); loadTodayStats();
+    }
     else showToast(r.message,true);
   } catch(e) { showToast('削除エラー',true); }
 }
@@ -1027,12 +1087,12 @@ document.getElementById('backupBtn').addEventListener('click', async function() 
   finally { document.getElementById('backupBtnText').textContent='今すぐバックアップ'; document.getElementById('backupSpinner').style.display='none'; this.disabled=false; }
 });
 
-// ===== 初期化 =====
+// ===== 初期化（マスタとホームデータを並列取得） =====
 async function init() {
   updateDate();
   initSelects();
-  await loadMaster();
-  await loadTodayStats();
+  // マスタとホームデータを同時に取得
+  await Promise.all([loadMaster(), loadTodayStats()]);
 }
 init();
 </script>
