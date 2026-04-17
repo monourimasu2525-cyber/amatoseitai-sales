@@ -7,329 +7,310 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-  * { -webkit-tap-highlight-color: transparent; }
-  body { font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; }
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
-  .tab-btn.active { background-color: #4f46e5; color: white; }
-  .toast { transform: translateY(100px); opacity: 0; transition: all 0.3s ease; }
+  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Meiryo', sans-serif; background: #f9fafb; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .toast { transform: translateY(20px); opacity: 0; transition: all 0.25s ease; pointer-events: none; }
   .toast.show { transform: translateY(0); opacity: 1; }
   .modal { display: none; }
   .modal.open { display: flex; }
-  .spinner { border: 3px solid #e0e7ff; border-top: 3px solid #4f46e5; border-radius: 50%; width: 28px; height: 28px; animation: spin 0.8s linear infinite; }
+  .spinner { border: 2px solid #e0e7ff; border-top: 2px solid #4f46e5; border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .card-hover { transition: transform 0.15s, box-shadow 0.15s; }
-  .card-hover:active { transform: scale(0.97); }
-  .quick-btn { transition: all 0.15s; }
-  .quick-btn:active { transform: scale(0.95); }
-  .fade-in { animation: fadeIn 0.3s ease; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .quick-card { transition: transform 0.1s, box-shadow 0.1s; cursor: pointer; }
+  .quick-card:active { transform: scale(0.97); box-shadow: none; }
+  .fade-in { animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .period-btn { transition: all 0.15s; cursor: pointer; }
+  .bottom-nav-safe { padding-bottom: env(safe-area-inset-bottom); }
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
 <!-- ヘッダー -->
-<header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-30">
-  <div class="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+<header class="bg-white border-b border-gray-200 sticky top-0 z-30">
+  <div class="flex items-center justify-between px-4 h-12 max-w-lg mx-auto">
     <div class="flex items-center gap-2">
-      <span class="text-2xl">🏥</span>
-      <div>
-        <div class="font-bold text-base leading-tight">あまと整体院</div>
-        <div class="text-xs text-indigo-200">売上管理システム</div>
-      </div>
+      <span class="text-lg">🏥</span>
+      <span class="font-bold text-gray-900 text-base">あまと整体院</span>
     </div>
-    <div id="headerDate" class="text-xs text-indigo-200 text-right"></div>
+    <div id="headerDate" class="text-sm text-gray-400"></div>
   </div>
 </header>
 
-<!-- タブナビ -->
-<nav class="bg-white border-b border-indigo-100 sticky top-[60px] z-20 shadow-sm">
-  <div class="max-w-lg mx-auto flex overflow-x-auto">
-    <button class="tab-btn active flex-1 min-w-0 py-2.5 text-xs font-medium text-gray-500 flex flex-col items-center gap-0.5 hover:bg-indigo-50 transition-colors" data-tab="home">
-      <span class="text-base">🏠</span><span>ホーム</span>
+<!-- ========== ホームページ ========== -->
+<div id="page-home" class="page active pb-24">
+  <!-- 指標バー -->
+  <div class="bg-white border-b border-gray-100 px-4 py-3">
+    <div class="flex gap-3 overflow-x-auto scrollbar-hide max-w-lg mx-auto">
+      <div class="border border-gray-200 rounded-xl px-3 py-2.5 min-w-[130px] bg-gray-50 flex-shrink-0">
+        <div class="text-xs text-gray-400 mb-1">今月売上</div>
+        <div id="kpi_month" class="font-bold text-gray-900 text-sm">—</div>
+        <div id="kpi_month_diff" class="text-xs text-gray-400 mt-0.5">—</div>
+      </div>
+      <div class="border border-gray-200 rounded-xl px-3 py-2.5 min-w-[130px] bg-gray-50 flex-shrink-0">
+        <div class="text-xs text-gray-400 mb-1">今日の売上</div>
+        <div id="kpi_today" class="font-bold text-gray-900 text-sm">—</div>
+        <div id="kpi_today_count" class="text-xs text-gray-400 mt-0.5">—</div>
+      </div>
+      <div class="border border-gray-200 rounded-xl px-3 py-2.5 min-w-[110px] bg-gray-50 flex-shrink-0">
+        <div class="text-xs text-gray-400 mb-1">新規</div>
+        <div id="kpi_shinki" class="font-bold text-green-600 text-sm">—</div>
+        <div id="kpi_shinki_count" class="text-xs text-gray-400 mt-0.5">—</div>
+      </div>
+      <div class="border border-gray-200 rounded-xl px-3 py-2.5 min-w-[110px] bg-gray-50 flex-shrink-0">
+        <div class="text-xs text-gray-400 mb-1">常連</div>
+        <div id="kpi_joren" class="font-bold text-blue-600 text-sm">—</div>
+        <div id="kpi_joren_count" class="text-xs text-gray-400 mt-0.5">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-lg mx-auto px-4 mt-3 space-y-3">
+    <!-- 売上推移グラフ -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-sm font-bold text-gray-700">売上推移</span>
+        <div class="flex gap-1">
+          <button onclick="setPeriod(7)" class="period-btn px-3 py-1 rounded-lg text-xs bg-indigo-600 text-white" data-p="7">7日</button>
+          <button onclick="setPeriod(15)" class="period-btn px-3 py-1 rounded-lg text-xs bg-gray-100 text-gray-500" data-p="15">15日</button>
+          <button onclick="setPeriod(30)" class="period-btn px-3 py-1 rounded-lg text-xs bg-gray-100 text-gray-500" data-p="30">30日</button>
+        </div>
+      </div>
+      <div id="trendSpinner" class="flex justify-center py-6"><div class="spinner w-6 h-6"></div></div>
+      <div style="height:160px; display:none" id="trendChartWrap">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+
+    <!-- クイック入力 -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+      <div class="text-xs text-gray-400 mb-2">記録する</div>
+      <div id="quickBtns" class="grid grid-cols-2 gap-3">
+        <div class="col-span-2 flex justify-center py-3"><div class="spinner w-5 h-5"></div></div>
+      </div>
+    </div>
+
+    <!-- 今日の記録 -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-sm font-bold text-gray-700">今日の記録</span>
+        <span id="todayCountBadge" class="text-xs bg-indigo-100 text-indigo-700 rounded-full px-2 py-0.5">—</span>
+      </div>
+      <div id="todayHistoryList" class="divide-y divide-gray-50 text-sm text-gray-400">読込中…</div>
+      <div class="text-right mt-2">
+        <button onclick="switchPage('input')" class="text-xs text-indigo-500">すべて見る →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 入力ページ ========== -->
+<div id="page-input" class="page pb-24">
+  <div class="max-w-lg mx-auto px-4 pt-3 space-y-3">
+    <!-- フォーム -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+      <div class="text-sm font-bold text-gray-700 mb-3">売上入力</div>
+      <div class="mb-3">
+        <label class="block text-xs text-gray-400 mb-1">種別</label>
+        <select id="inputType" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"></select>
+      </div>
+      <div class="mb-4">
+        <label class="block text-xs text-gray-400 mb-1">金額（円）</label>
+        <input id="inputAmount" type="number" inputmode="numeric" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" placeholder="3270">
+      </div>
+      <button id="addSaleBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl py-3 font-semibold text-sm transition-colors shadow-sm flex items-center justify-center gap-2">
+        <span>登録する</span>
+        <div id="addSaleSpinner" class="spinner hidden w-4 h-4" style="border-color:rgba(255,255,255,0.4);border-top-color:white;"></div>
+      </button>
+    </div>
+
+    <!-- 履歴 -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-sm font-bold text-gray-700">直近30日の履歴</span>
+        <div id="historySpinner" class="spinner hidden w-4 h-4"></div>
+      </div>
+      <div id="historyList" class="divide-y divide-gray-50 text-sm text-gray-400">読込中…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 集計ページ ========== -->
+<div id="page-stats" class="page pb-24">
+  <div class="max-w-lg mx-auto px-4 pt-3 space-y-3">
+    <!-- 月選択 -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+      <div class="flex items-center gap-2">
+        <select id="statsYear" class="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:border-indigo-400"></select>
+        <select id="statsMonth" class="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:border-indigo-400"></select>
+        <button id="loadStatsBtn" class="ml-auto bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">表示</button>
+      </div>
+    </div>
+
+    <!-- サマリーカード -->
+    <div class="grid grid-cols-3 gap-2">
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-3 text-center">
+        <div class="text-xs text-gray-400 mb-1">新規</div>
+        <div id="statsShinkiSales" class="text-sm font-bold text-indigo-600">—</div>
+        <div id="statsShinkiCount" class="text-xs text-gray-400">—件</div>
+      </div>
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-3 text-center">
+        <div class="text-xs text-gray-400 mb-1">常連</div>
+        <div id="statsJorenSales" class="text-sm font-bold text-green-600">—</div>
+        <div id="statsJorenCount" class="text-xs text-gray-400">—件</div>
+      </div>
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-3 text-center">
+        <div class="text-xs text-gray-400 mb-1">合計</div>
+        <div id="statsTotalSales" class="text-sm font-bold text-gray-800">—</div>
+        <div id="statsTotalCount" class="text-xs text-gray-400">—件</div>
+      </div>
+    </div>
+
+    <!-- グラフ（切替） -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+      <div class="flex items-center gap-2 mb-3">
+        <button onclick="switchStatsChart('month')" id="statsTabMonth" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-600 text-white">月内訳</button>
+        <button onclick="switchStatsChart('trend')" id="statsTabTrend" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-500">12ヶ月</button>
+      </div>
+      <div id="statsChartSpinner" class="flex justify-center py-6"><div class="spinner w-6 h-6"></div></div>
+      <div id="monthChartWrap" style="height:200px; display:none"><canvas id="monthChart"></canvas></div>
+      <div id="trendChartWrap12" style="height:200px; display:none"><canvas id="trendChart12"></canvas></div>
+    </div>
+
+    <!-- テーブル -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+      <div class="text-sm font-bold text-gray-700 mb-3">月次サマリー</div>
+      <div id="statsTable" class="text-sm text-gray-400 text-center py-4">月を選択して「表示」を押してください</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 設定ページ ========== -->
+<div id="page-settings" class="page pb-24">
+  <div class="max-w-lg mx-auto px-4 pt-3 space-y-3">
+
+    <!-- 売上マスタ -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+      <div class="px-4 pt-4 pb-2">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-bold text-gray-700">売上マスタ</span>
+          <div id="masterSpinner" class="spinner hidden w-4 h-4"></div>
+        </div>
+        <div class="text-xs text-gray-400 mt-0.5">クイック入力・種別選択に反映されます</div>
+      </div>
+      <div id="masterList" class="divide-y divide-gray-100 px-4 pb-3 text-sm text-gray-400">読込中…</div>
+      <div class="px-4 pb-4 pt-3 border-t border-gray-100">
+        <div class="text-xs font-medium text-gray-500 mb-2">＋ 追加</div>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+          <input id="newMasterType" type="text" placeholder="種別名" class="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:border-indigo-400">
+          <input id="newMasterAmount" type="number" placeholder="金額" class="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:border-indigo-400">
+        </div>
+        <input id="newMasterDesc" type="text" placeholder="説明（任意）" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:border-indigo-400 mb-2">
+        <button id="addMasterBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-2.5 text-sm font-medium transition-colors">追加する</button>
+      </div>
+    </div>
+
+    <!-- 経理シート -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+      <div class="text-sm font-bold text-gray-700 mb-3">経理シート生成</div>
+      <div class="flex gap-2 mb-3">
+        <select id="accYear" class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:border-indigo-400"></select>
+        <select id="accMonth" class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:border-indigo-400"></select>
+      </div>
+      <button id="genAccBtn" class="w-full bg-gray-800 hover:bg-gray-900 text-white rounded-xl py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2">
+        <span id="genAccBtnText">経理シートを生成する</span>
+        <div id="genAccSpinner" class="spinner hidden w-4 h-4" style="border-color:rgba(255,255,255,0.4);border-top-color:white;"></div>
+      </button>
+      <div id="accResult" class="hidden mt-3">
+        <div class="bg-green-50 rounded-xl p-3 border border-green-100 mb-2 text-xs text-green-700">
+          <span id="accResultMsg"></span>
+        </div>
+        <a id="accSheetLink" href="#" target="_blank" class="block text-center text-xs text-indigo-600 border border-indigo-200 rounded-xl py-2.5 hover:bg-indigo-50 transition-colors">スプレッドシートを開く →</a>
+      </div>
+    </div>
+
+    <!-- バックアップ -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+      <div class="text-sm font-bold text-gray-700 mb-3">バックアップ</div>
+      <button id="backupBtn" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2">
+        <span id="backupBtnText">今すぐバックアップ</span>
+        <div id="backupSpinner" class="spinner hidden w-4 h-4" style="border-color:#d1d5db;border-top-color:#374151;"></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ボトムナビ -->
+<nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-20 bottom-nav-safe">
+  <div class="flex items-center justify-around max-w-lg mx-auto" style="height:56px;">
+    <button onclick="switchPage('home')" id="nav-home" class="flex flex-col items-center gap-0.5 px-5 py-2">
+      <span class="text-lg">🏠</span>
+      <span class="text-xs text-indigo-600 font-medium">ホーム</span>
     </button>
-    <button class="tab-btn flex-1 min-w-0 py-2.5 text-xs font-medium text-gray-500 flex flex-col items-center gap-0.5 hover:bg-indigo-50 transition-colors" data-tab="input">
-      <span class="text-base">📝</span><span>入力</span>
+    <button onclick="switchPage('input')" id="nav-input" class="flex flex-col items-center gap-0.5 px-5 py-2">
+      <span class="text-lg">➕</span>
+      <span class="text-xs text-gray-400">入力</span>
     </button>
-    <button class="tab-btn flex-1 min-w-0 py-2.5 text-xs font-medium text-gray-500 flex flex-col items-center gap-0.5 hover:bg-indigo-50 transition-colors" data-tab="stats">
-      <span class="text-base">📊</span><span>集計</span>
+    <button onclick="switchPage('stats')" id="nav-stats" class="flex flex-col items-center gap-0.5 px-5 py-2">
+      <span class="text-lg">📊</span>
+      <span class="text-xs text-gray-400">集計</span>
     </button>
-    <button class="tab-btn flex-1 min-w-0 py-2.5 text-xs font-medium text-gray-500 flex flex-col items-center gap-0.5 hover:bg-indigo-50 transition-colors" data-tab="master">
-      <span class="text-base">⚙️</span><span>マスタ</span>
-    </button>
-    <button class="tab-btn flex-1 min-w-0 py-2.5 text-xs font-medium text-gray-500 flex flex-col items-center gap-0.5 hover:bg-indigo-50 transition-colors" data-tab="accounting">
-      <span class="text-base">📑</span><span>経理</span>
+    <button onclick="switchPage('settings')" id="nav-settings" class="flex flex-col items-center gap-0.5 px-5 py-2">
+      <span class="text-lg">⚙️</span>
+      <span class="text-xs text-gray-400">設定</span>
     </button>
   </div>
 </nav>
 
-<main class="max-w-lg mx-auto px-4 pb-24 pt-4">
-
-<!-- ========== ホームタブ ========== -->
-<div id="tab-home" class="tab-content active fade-in">
-  <!-- 今日の売上合計 -->
-  <div class="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl p-5 text-white shadow-lg mb-4">
-    <div class="flex items-center justify-between mb-1">
-      <span class="text-sm font-medium text-indigo-200">📅 今日の売上</span>
-      <div id="homeLoadingSpinner" class="spinner hidden" style="border-color:#a5b4fc; border-top-color:white; width:18px; height:18px;"></div>
-    </div>
-    <div id="todayTotal" class="text-4xl font-bold tracking-tight">¥—</div>
-    <div class="flex gap-4 mt-2 text-sm text-indigo-200">
-      <span id="todayCount">— 件</span>
-      <span id="todayDate" class="ml-auto text-xs"></span>
-    </div>
-    <!-- 前日比・前月比バッジ -->
-    <div class="flex gap-2 mt-3 flex-wrap">
-      <span id="badge_yesterday" class="px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white hidden"></span>
-      <span id="badge_lastmonth" class="px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white hidden"></span>
-    </div>
-  </div>
-
-  <!-- 新規/常連カード -->
-  <div class="grid grid-cols-2 gap-3 mb-4">
-    <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50 card-hover">
-      <div class="text-2xl mb-1">🆕</div>
-      <div class="text-xs text-gray-500 mb-0.5">新規</div>
-      <div id="homeShinki" class="text-2xl font-bold text-indigo-700">—</div>
-      <div id="homeShinkiCount" class="text-xs text-gray-400 mt-0.5">— 件</div>
-    </div>
-    <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50 card-hover">
-      <div class="text-2xl mb-1">👥</div>
-      <div class="text-xs text-gray-500 mb-0.5">常連</div>
-      <div id="homeJoren" class="text-2xl font-bold text-indigo-700">—</div>
-      <div id="homeJorenCount" class="text-xs text-gray-400 mt-0.5">— 件</div>
-    </div>
-  </div>
-
-  <!-- クイック入力 -->
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50 mb-4">
-    <div class="text-sm font-semibold text-gray-700 mb-3">⚡ クイック入力</div>
-    <div id="quickBtns" class="flex flex-col gap-2">
-      <div class="flex items-center justify-center py-4">
-        <div class="spinner"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 今日の履歴（直近5件） -->
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50">
-    <div class="text-sm font-semibold text-gray-700 mb-3">🕐 今日の記録</div>
-    <div id="todayHistory" class="space-y-2 text-sm text-gray-500">読込中…</div>
-  </div>
-</div>
-
-<!-- ========== 入力タブ ========== -->
-<div id="tab-input" class="tab-content fade-in">
-  <!-- 売上入力フォーム -->
-  <div class="bg-white rounded-xl p-5 shadow-sm border border-indigo-50 mb-4">
-    <div class="text-sm font-semibold text-gray-700 mb-4">📝 売上入力</div>
-    <div class="mb-3">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">種別</label>
-      <select id="inputType" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50">
-        <option value="">読込中…</option>
-      </select>
-    </div>
-    <div class="mb-4">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">金額（円）</label>
-      <input id="inputAmount" type="number" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50" placeholder="例: 3270">
-    </div>
-    <button id="addSaleBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl py-3 font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-sm">
-      <span>✅ 登録する</span>
-    </button>
-  </div>
-
-  <!-- 直近30日の履歴 -->
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50">
-    <div class="flex items-center justify-between mb-3">
-      <div class="text-sm font-semibold text-gray-700">📋 直近30日の履歴</div>
-      <div id="historySpinner" class="spinner hidden" style="width:18px; height:18px;"></div>
-    </div>
-    <div id="historyList" class="space-y-2 text-sm">
-      <div class="text-gray-400 py-4 text-center">読込中…</div>
-    </div>
-  </div>
-</div>
-
-<!-- ========== 集計タブ ========== -->
-<div id="tab-stats" class="tab-content fade-in">
-  <!-- 月選択 -->
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50 mb-4">
-    <div class="flex items-center gap-2">
-      <select id="statsYear" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 bg-gray-50"></select>
-      <select id="statsMonth" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 bg-gray-50"></select>
-      <button id="loadStatsBtn" class="ml-auto bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">表示</button>
-    </div>
-  </div>
-
-  <!-- 月次サマリーカード -->
-  <div id="monthSummaryCards" class="grid grid-cols-3 gap-2 mb-4">
-    <div class="bg-indigo-50 rounded-xl p-3 text-center border border-indigo-100">
-      <div class="text-xs text-gray-500 mb-1">新規</div>
-      <div id="statsShinkiSales" class="text-base font-bold text-indigo-700">—</div>
-      <div id="statsShinkiCount" class="text-xs text-gray-400">—件</div>
-    </div>
-    <div class="bg-green-50 rounded-xl p-3 text-center border border-green-100">
-      <div class="text-xs text-gray-500 mb-1">常連</div>
-      <div id="statsJorenSales" class="text-base font-bold text-green-700">—</div>
-      <div id="statsJorenCount" class="text-xs text-gray-400">—件</div>
-    </div>
-    <div class="bg-amber-50 rounded-xl p-3 text-center border border-amber-100">
-      <div class="text-xs text-gray-500 mb-1">合計</div>
-      <div id="statsTotalSales" class="text-base font-bold text-amber-700">—</div>
-      <div id="statsTotalCount" class="text-xs text-gray-400">—件</div>
-    </div>
-  </div>
-
-  <!-- 月次グラフ -->
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50 mb-4">
-    <div class="text-sm font-semibold text-gray-700 mb-3">📊 月次内訳グラフ</div>
-    <canvas id="monthChart" height="180"></canvas>
-  </div>
-
-  <!-- 過去12ヶ月トレンド -->
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50 mb-4">
-    <div class="text-sm font-semibold text-gray-700 mb-3">📈 過去12ヶ月トレンド</div>
-    <canvas id="trendChart" height="180"></canvas>
-  </div>
-
-  <!-- 月次サマリーテーブル -->
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50">
-    <div class="text-sm font-semibold text-gray-700 mb-3">🗓 月次サマリー（過去12ヶ月）</div>
-    <div id="statsSpinner" class="flex justify-center py-4 hidden"><div class="spinner"></div></div>
-    <div id="statsTable" class="overflow-x-auto">
-      <div class="text-gray-400 text-sm text-center py-4">読込中…</div>
-    </div>
-  </div>
-</div>
-
-<!-- ========== マスタタブ ========== -->
-<div id="tab-master" class="tab-content fade-in">
-  <!-- 説明 -->
-  <div class="bg-indigo-50 rounded-xl p-3 mb-4 border border-indigo-100">
-    <div class="text-xs text-indigo-700 flex items-start gap-2">
-      <span class="text-base flex-shrink-0">💡</span>
-      <span>このマスタはホームのクイック入力ボタン・入力フォームの種別選択に反映されます。</span>
-    </div>
-  </div>
-
-  <!-- マスタ一覧 -->
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50 mb-4">
-    <div class="flex items-center justify-between mb-3">
-      <div class="text-sm font-semibold text-gray-700">⚙️ 現在のマスタ</div>
-      <div id="masterSpinner" class="spinner hidden" style="width:18px; height:18px;"></div>
-    </div>
-    <div id="masterList" class="space-y-2">
-      <div class="text-gray-400 text-sm text-center py-4">読込中…</div>
-    </div>
-  </div>
-
-  <!-- 新規追加フォーム -->
-  <div class="bg-white rounded-xl p-4 shadow-sm border border-indigo-50">
-    <div class="text-sm font-semibold text-gray-700 mb-3">➕ 新規追加</div>
-    <div class="mb-2">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">種別名</label>
-      <input id="newMasterType" type="text" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50" placeholder="例: 学生">
-    </div>
-    <div class="mb-2">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">金額（円）</label>
-      <input id="newMasterAmount" type="number" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50" placeholder="例: 4000">
-    </div>
-    <div class="mb-3">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">説明（任意）</label>
-      <input id="newMasterDesc" type="text" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50" placeholder="例: 学生向け施術">
-    </div>
-    <button id="addMasterBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl py-2.5 font-semibold text-sm transition-colors shadow-sm">
-      ➕ 追加する
-    </button>
-  </div>
-</div>
-
-<!-- ========== 経理タブ ========== -->
-<div id="tab-accounting" class="tab-content fade-in">
-  <div class="bg-white rounded-xl p-5 shadow-sm border border-indigo-50 mb-4">
-    <div class="text-sm font-semibold text-gray-700 mb-4">📑 経理シート生成</div>
-    <div class="flex gap-2 mb-4">
-      <select id="accYear" class="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 bg-gray-50"></select>
-      <select id="accMonth" class="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 bg-gray-50"></select>
-    </div>
-    <button id="genAccBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl py-3 font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-sm">
-      <span id="genAccBtnText">📑 経理シートを生成する</span>
-      <div id="genAccSpinner" class="spinner hidden" style="width:18px; height:18px; border-color:rgba(255,255,255,0.4); border-top-color:white;"></div>
-    </button>
-  </div>
-
-  <div id="accResult" class="hidden">
-    <div class="bg-green-50 rounded-xl p-4 border border-green-100 mb-3">
-      <div class="text-green-700 font-medium text-sm flex items-start gap-2">
-        <span>✅</span>
-        <span id="accResultMsg"></span>
-      </div>
-    </div>
-    <a id="accSheetLink" href="#" target="_blank"
-      class="block w-full text-center bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-700 rounded-xl py-3 font-semibold text-sm transition-colors shadow-sm">
-      📊 スプレッドシートを開く →
-    </a>
-  </div>
-
-  <div class="mt-4 bg-indigo-50 rounded-xl p-3 border border-indigo-100">
-    <div class="text-xs text-indigo-700">
-      <span class="font-semibold">📌 補足：</span>日別の新規・常連の件数と売上が自動集計されたシートが生成されます。
-    </div>
-  </div>
-</div>
-
-</main>
-
-<!-- ========== 修正モーダル ========== -->
-<div id="editModal" class="modal fixed inset-0 bg-black/50 z-50 items-end justify-center">
-  <div class="bg-white w-full max-w-lg rounded-t-3xl p-5 shadow-xl">
+<!-- 修正モーダル -->
+<div id="editModal" class="modal fixed inset-0 bg-black/40 z-50 items-end justify-center">
+  <div class="bg-white w-full max-w-lg rounded-t-3xl p-5 shadow-2xl">
     <div class="flex items-center justify-between mb-4">
-      <div class="text-base font-semibold text-gray-800">✏️ 売上修正</div>
-      <button id="closeEditModal" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+      <span class="font-semibold text-gray-800">売上修正</span>
+      <button id="closeEditModal" class="text-gray-400 text-2xl leading-none">×</button>
     </div>
     <div class="mb-3">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">種別</label>
-      <select id="editType" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50"></select>
+      <label class="block text-xs text-gray-400 mb-1">種別</label>
+      <select id="editType" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:border-indigo-400"></select>
     </div>
     <div class="mb-4">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">金額（円）</label>
-      <input id="editAmount" type="number" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50">
+      <label class="block text-xs text-gray-400 mb-1">金額（円）</label>
+      <input id="editAmount" type="number" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:border-indigo-400">
     </div>
     <input type="hidden" id="editRowIndex">
-    <button id="confirmEditBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-3 font-semibold text-sm transition-colors shadow-sm">
-      ✅ 修正を保存する
-    </button>
+    <button id="confirmEditBtn" class="w-full bg-indigo-600 text-white rounded-xl py-3 font-semibold text-sm">修正を保存する</button>
   </div>
 </div>
 
 <!-- マスタ編集モーダル -->
-<div id="editMasterModal" class="modal fixed inset-0 bg-black/50 z-50 items-end justify-center">
-  <div class="bg-white w-full max-w-lg rounded-t-3xl p-5 shadow-xl">
+<div id="editMasterModal" class="modal fixed inset-0 bg-black/40 z-50 items-end justify-center">
+  <div class="bg-white w-full max-w-lg rounded-t-3xl p-5 shadow-2xl">
     <div class="flex items-center justify-between mb-4">
-      <div class="text-base font-semibold text-gray-800">✏️ マスタ編集</div>
-      <button id="closeEditMasterModal" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+      <span class="font-semibold text-gray-800">マスタ編集</span>
+      <button id="closeEditMasterModal" class="text-gray-400 text-2xl leading-none">×</button>
     </div>
     <div class="mb-3">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">種別名</label>
-      <input id="editMasterType" type="text" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50">
+      <label class="block text-xs text-gray-400 mb-1">種別名</label>
+      <input id="editMasterType" type="text" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:border-indigo-400">
     </div>
     <div class="mb-3">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">金額（円）</label>
-      <input id="editMasterAmount" type="number" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50">
+      <label class="block text-xs text-gray-400 mb-1">金額（円）</label>
+      <input id="editMasterAmount" type="number" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:border-indigo-400">
     </div>
     <div class="mb-4">
-      <label class="block text-xs text-gray-500 mb-1 font-medium">説明（任意）</label>
-      <input id="editMasterDesc" type="text" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-gray-50">
+      <label class="block text-xs text-gray-400 mb-1">説明（任意）</label>
+      <input id="editMasterDesc" type="text" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:border-indigo-400">
     </div>
     <input type="hidden" id="editMasterRowIndex">
-    <button id="confirmEditMasterBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-3 font-semibold text-sm transition-colors shadow-sm">
-      ✅ 更新する
-    </button>
+    <button id="confirmEditMasterBtn" class="w-full bg-indigo-600 text-white rounded-xl py-3 font-semibold text-sm mb-2">更新する</button>
   </div>
 </div>
 
-<!-- トースト通知 -->
-<div id="toast" class="toast fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-sm px-5 py-3 rounded-full shadow-xl max-w-xs text-center pointer-events-none">
+<!-- トースト -->
+<div id="toast" class="toast fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-sm px-5 py-2.5 rounded-full shadow-xl whitespace-nowrap">
   <span id="toastMsg"></span>
 </div>
 
@@ -338,537 +319,469 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycby3931P6ityh6mjGOiBVmLd
 const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/17bAyQngDEjoDgqSLLUU5p45HWXomF09bLf_h6FySsjs';
 
 let masterItems = [];
-let historyRecords = [];
-let monthChart = null;
-let trendChart = null;
+let trendChartObj = null;
+let monthChartObj = null;
+let trendChart12Obj = null;
+let trendData = [];
+let trendLabels = [];
+let currentPeriod = 7;
+let currentStatsChart = 'month';
 
 // ========== ユーティリティ ==========
+const fmt = n => '¥' + Number(n).toLocaleString();
+const escQ = s => String(s).replace(/'/g, "\\'");
 
-function fmt(n) {
-  return '¥' + Number(n).toLocaleString();
-}
-
-function showToast(msg, isError = false) {
-  const toast = document.getElementById('toast');
-  const toastMsg = document.getElementById('toastMsg');
-  toastMsg.textContent = msg;
-  toast.classList.toggle('bg-red-600', isError);
-  toast.classList.toggle('bg-gray-900', !isError);
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 3000);
+function showToast(msg, isErr = false) {
+  const el = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  el.className = `toast fixed bottom-20 left-1/2 -translate-x-1/2 z-50 text-white text-sm px-5 py-2.5 rounded-full shadow-xl whitespace-nowrap ${isErr ? 'bg-red-600' : 'bg-gray-900'}`;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
 }
 
 async function apiGet(params) {
   const url = GAS_URL + '?' + new URLSearchParams(params);
-  const res = await fetch(url);
-  return res.json();
+  const r = await fetch(url); return r.json();
 }
-
 async function apiPost(body) {
-  const res = await fetch(GAS_URL, {
-    method: 'POST',
-    body: JSON.stringify(body)
+  const r = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(body) });
+  return r.json();
+}
+
+// ========== ページ切り替え ==========
+const pages = ['home','input','stats','settings'];
+function switchPage(page) {
+  pages.forEach(p => {
+    document.getElementById('page-' + p).classList.toggle('active', p === page);
+    const nav = document.getElementById('nav-' + p);
+    if (!nav) return;
+    const label = nav.querySelector('span:last-child');
+    label.className = p === page ? 'text-xs text-indigo-600 font-medium' : 'text-xs text-gray-400';
   });
-  return res.json();
+  if (page === 'input') loadHistory();
+  if (page === 'stats') loadStats();
+  if (page === 'settings') loadMaster();
 }
 
-// ========== 日時 ==========
-
-function updateHeaderDate() {
+// ========== 日付 ==========
+function updateDate() {
   const now = new Date();
-  const d = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} (${['日','月','火','水','木','金','土'][now.getDay()]})`;
-  document.getElementById('headerDate').textContent = d;
-  document.getElementById('todayDate').textContent = d;
+  const days = ['日','月','火','水','木','金','土'];
+  document.getElementById('headerDate').textContent = `${now.getMonth()+1}月${now.getDate()}日 ${days[now.getDay()]}`;
 }
 
-// ========== マスタ取得 ==========
-
+// ========== マスタ ==========
 async function loadMaster() {
+  document.getElementById('masterSpinner').classList.remove('hidden');
   try {
-    const data = await apiGet({ action: 'getMaster' });
-    masterItems = data.items || [];
+    const d = await apiGet({ action: 'getMaster' });
+    masterItems = d.items || [];
     renderMasterList();
-    updateTypeSelects();
+    updateSelects();
     renderQuickBtns();
-  } catch (e) {
-    showToast('マスタ取得エラー', true);
-  }
+  } catch(e) { showToast('マスタ取得エラー', true); }
+  finally { document.getElementById('masterSpinner').classList.add('hidden'); }
 }
 
 function renderMasterList() {
   const el = document.getElementById('masterList');
-  if (!masterItems.length) {
-    el.innerHTML = '<div class="text-gray-400 text-sm text-center py-4">マスタが空です</div>';
-    return;
-  }
+  if (!masterItems.length) { el.innerHTML = '<div class="py-4 text-center text-gray-400">マスタが空です</div>'; return; }
   el.innerHTML = masterItems.map(item => `
-    <div class="flex items-center justify-between bg-indigo-50 rounded-xl px-3 py-3 border border-indigo-100">
+    <div class="flex items-center justify-between py-3 gap-2">
       <div>
-        <div class="font-semibold text-sm text-gray-800">${item.type}</div>
-        <div class="text-xs text-indigo-600 font-medium">${fmt(item.amount)}</div>
-        <div class="text-xs text-gray-400">${item.description || ''}</div>
+        <span class="font-medium text-gray-800 text-sm">${item.type}</span>
+        <span class="text-xs text-indigo-600 ml-2">${fmt(item.amount)}</span>
+        ${item.description ? `<span class="text-xs text-gray-400 ml-1">${item.description}</span>` : ''}
       </div>
-      <div class="flex gap-2">
-        <button onclick="openEditMaster(${item.rowIndex},'${escHtml(item.type)}',${item.amount},'${escHtml(item.description)}')"
-          class="text-indigo-500 hover:text-indigo-700 p-1.5 rounded-lg hover:bg-indigo-100 transition-colors text-base">✏️</button>
-        <button onclick="deleteMaster(${item.rowIndex},'${escHtml(item.type)}')"
-          class="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors text-base">🗑</button>
+      <div class="flex gap-1 flex-shrink-0">
+        <button onclick="openEditMaster(${item.rowIndex},'${escQ(item.type)}',${item.amount},'${escQ(item.description||'')}')" class="p-1.5 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg text-sm">✏️</button>
+        <button onclick="deleteMaster(${item.rowIndex},'${escQ(item.type)}')" class="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg text-sm">🗑</button>
       </div>
     </div>
   `).join('');
 }
 
-function updateTypeSelects() {
-  const options = masterItems.map(i => `<option value="${escHtml(i.type)}" data-amount="${i.amount}">${i.type} (${fmt(i.amount)})</option>`).join('');
-  document.getElementById('inputType').innerHTML = options || '<option value="">マスタが空です</option>';
-  document.getElementById('editType').innerHTML = options;
+function updateSelects() {
+  const opts = masterItems.map(i => `<option value="${i.type}" data-amount="${i.amount}">${i.type}（${fmt(i.amount)}）</option>`).join('');
+  ['inputType','editType'].forEach(id => document.getElementById(id).innerHTML = opts || '<option>マスタが空です</option>');
+  autoFillAmount();
+}
 
-  // 金額自動入力
-  const inputType = document.getElementById('inputType');
-  if (inputType.options.length > 0) {
-    const sel = inputType.options[inputType.selectedIndex];
-    document.getElementById('inputAmount').value = sel ? sel.dataset.amount : '';
-  }
+function autoFillAmount() {
+  const sel = document.getElementById('inputType');
+  if (sel.options.length) document.getElementById('inputAmount').value = sel.options[sel.selectedIndex]?.dataset.amount || '';
 }
 
 function renderQuickBtns() {
   const el = document.getElementById('quickBtns');
-  if (!masterItems.length) {
-    el.innerHTML = '<div class="text-gray-400 text-sm text-center py-2">マスタが空です</div>';
-    return;
-  }
-  const emojis = ['🆕','👥','⭐','🌟','💫','✨','🎯','💎'];
-  el.innerHTML = masterItems.map((item, i) => `
-    <button onclick="quickAdd('${escHtml(item.type)}',${item.amount})"
-      class="quick-btn w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl py-3.5 font-semibold text-sm shadow-sm flex items-center justify-between px-4">
-      <span>${emojis[i % emojis.length]} ${item.type}</span>
-      <span class="text-indigo-200">${fmt(item.amount)}</span>
-    </button>
-  `).join('');
+  if (!masterItems.length) { el.innerHTML = '<div class="col-span-2 text-center text-gray-400 py-3">マスタが空です</div>'; return; }
+  const colors = [
+    ['bg-green-50 border-green-200','text-green-700','text-green-600'],
+    ['bg-blue-50 border-blue-200','text-blue-700','text-blue-600'],
+    ['bg-purple-50 border-purple-200','text-purple-700','text-purple-600'],
+    ['bg-amber-50 border-amber-200','text-amber-700','text-amber-600'],
+  ];
+  el.innerHTML = masterItems.map((item, i) => {
+    const c = colors[i % colors.length];
+    return `<div class="quick-card border ${c[0]} rounded-xl p-4 text-center" onclick="quickAdd('${escQ(item.type)}',${item.amount})">
+      <div class="text-sm font-bold ${c[1]} mb-1">${item.type}</div>
+      <div class="text-lg font-bold ${c[2]}">${fmt(item.amount)}</div>
+    </div>`;
+  }).join('');
 }
 
-// ========== 今日の売上 ==========
+document.getElementById('inputType').addEventListener('change', autoFillAmount);
 
+// ========== 今日の統計 ==========
 async function loadTodayStats() {
-  document.getElementById('homeLoadingSpinner').classList.remove('hidden');
   try {
-    const data = await apiGet({ action: 'getTodayStats' });
-    document.getElementById('todayTotal').textContent = fmt(data.totalSales);
-    document.getElementById('todayCount').textContent = `${data.totalCount} 件`;
-    document.getElementById('homeShinki').textContent = fmt(data.shinkiSales);
-    document.getElementById('homeShinkiCount').textContent = `${data.shinkiCount} 件`;
-    document.getElementById('homeJoren').textContent = fmt(data.jorenSales);
-    document.getElementById('homeJorenCount').textContent = `${data.jorenCount} 件`;
+    const d = await apiGet({ action: 'getTodayStats' });
+    document.getElementById('kpi_today').textContent = fmt(d.totalSales);
+    document.getElementById('kpi_today_count').textContent = `${d.totalCount}件`;
+    document.getElementById('kpi_shinki').textContent = fmt(d.shinkiSales);
+    document.getElementById('kpi_shinki_count').textContent = `${d.shinkiCount}件`;
+    document.getElementById('kpi_joren').textContent = fmt(d.jorenSales);
+    document.getElementById('kpi_joren_count').textContent = `${d.jorenCount}件`;
+    document.getElementById('todayCountBadge').textContent = `${d.totalCount}件`;
 
-    // 前日比
+    // 今月
     const now = new Date();
-    const yesterday = new Date(now); yesterday.setDate(now.getDate()-1);
-    const prevDay = await apiGet({ action: 'getMonthStats', year: yesterday.getFullYear(), month: yesterday.getMonth()+1 });
-    // 簡易前月比
-    const prevMonth = new Date(now.getFullYear(), now.getMonth()-1, 1);
-    const prevMonthData = await apiGet({ action: 'getMonthStats', year: prevMonth.getFullYear(), month: prevMonth.getMonth()+1 });
-    const thisMonthData = await apiGet({ action: 'getMonthStats', year: now.getFullYear(), month: now.getMonth()+1 });
-
-    const prevMonthSales = prevMonthData.totalSales || 0;
-    const thisMonthSales = thisMonthData.totalSales || 0;
-    if (prevMonthSales > 0) {
-      const diff = thisMonthSales - prevMonthSales;
-      const pct = Math.round(diff / prevMonthSales * 100);
-      const badge = document.getElementById('badge_lastmonth');
-      badge.textContent = `前月比 ${pct >= 0 ? '+' : ''}${pct}%`;
-      badge.className = `px-2 py-0.5 rounded-full text-xs font-medium ${pct >= 0 ? 'bg-green-500/30 text-green-100' : 'bg-red-400/30 text-red-100'}`;
-      badge.classList.remove('hidden');
+    const thisMonth = await apiGet({ action: 'getMonthStats', year: now.getFullYear(), month: now.getMonth()+1 });
+    const prevMonth = await apiGet({ action: 'getMonthStats', year: now.getFullYear(), month: now.getMonth() || 12 });
+    document.getElementById('kpi_month').textContent = fmt(thisMonth.totalSales);
+    if (prevMonth.totalSales > 0) {
+      const pct = Math.round((thisMonth.totalSales - prevMonth.totalSales) / prevMonth.totalSales * 100);
+      const el = document.getElementById('kpi_month_diff');
+      el.textContent = `${pct >= 0 ? '▲' : '▼'}${Math.abs(pct)}% 先月比`;
+      el.className = `text-xs mt-0.5 ${pct >= 0 ? 'text-green-600' : 'text-red-500'}`;
     }
 
+    // 今日履歴
     await loadTodayHistory();
-  } catch (e) {
-    document.getElementById('todayTotal').textContent = 'エラー';
-  } finally {
-    document.getElementById('homeLoadingSpinner').classList.add('hidden');
+    // グラフ
+    await loadTrendData();
+  } catch(e) {
+    document.getElementById('kpi_today').textContent = 'エラー';
   }
 }
 
 async function loadTodayHistory() {
   try {
-    const data = await apiGet({ action: 'getRecentHistory', days: 1 });
-    const records = data.records || [];
-    const el = document.getElementById('todayHistory');
-    if (!records.length) {
-      el.innerHTML = '<div class="text-center text-gray-400 py-2">まだ今日の記録はありません</div>';
-      return;
-    }
-    el.innerHTML = records.slice(0, 5).map(r => `
-      <div class="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
-        <div class="text-gray-600 text-xs">${r.time}</div>
-        <div class="text-xs font-medium text-indigo-700 bg-indigo-50 rounded px-2 py-0.5">${r.type}</div>
-        <div class="text-sm font-semibold text-gray-800">${fmt(r.amount)}</div>
+    const d = await apiGet({ action: 'getRecentHistory', days: 1 });
+    const records = (d.records || []).slice(0, 5);
+    const el = document.getElementById('todayHistoryList');
+    if (!records.length) { el.innerHTML = '<div class="text-gray-400 py-3 text-center text-sm">まだ記録がありません</div>'; return; }
+    el.innerHTML = records.map(r => `
+      <div class="flex items-center justify-between py-2.5 gap-2">
+        <span class="text-xs px-2 py-0.5 rounded-lg font-medium ${r.type === '新規' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">${r.type}</span>
+        <span class="font-semibold text-gray-800 text-sm flex-1 text-right">${fmt(r.amount)}</span>
+        <span class="text-xs text-gray-400">${r.time}</span>
+        <button onclick="deleteSale(${r.rowIndex},'今日')" class="text-xs text-red-400 hover:text-red-600 flex-shrink-0">取消</button>
       </div>
     `).join('');
   } catch(e) {}
 }
 
-// ========== クイック入力 ==========
-
-async function quickAdd(type, amount) {
+// ========== トレンドグラフ ==========
+async function loadTrendData() {
+  document.getElementById('trendSpinner').style.display = 'flex';
+  document.getElementById('trendChartWrap').style.display = 'none';
   try {
-    const res = await apiPost({ action: 'addSale', type, amount: Number(amount) });
-    if (res.success) {
-      showToast(`✅ ${type} ${fmt(amount)} を登録しました`);
-      loadTodayStats();
-      if (document.getElementById('tab-input').classList.contains('active')) {
-        loadHistory();
-      }
-    } else {
-      showToast(res.message, true);
+    const d = await apiGet({ action: 'getRecentHistory', days: 30 });
+    const records = d.records || [];
+    // 日別集計
+    const dayMap = {};
+    records.forEach(r => {
+      const key = r.date;
+      dayMap[key] = (dayMap[key] || 0) + r.amount;
+    });
+    // 過去30日分のラベル・データ
+    trendLabels = [];
+    trendData = [];
+    for (let i = 29; i >= 0; i--) {
+      const dt = new Date(); dt.setDate(dt.getDate() - i);
+      const key = `${dt.getFullYear()}/${dt.getMonth()+1}/${dt.getDate()}`;
+      const label = `${dt.getMonth()+1}/${dt.getDate()}`;
+      trendLabels.push(label);
+      trendData.push(dayMap[key] || 0);
     }
-  } catch(e) {
-    showToast('登録エラー', true);
+    renderTrendChart(currentPeriod);
+  } catch(e) {}
+  finally {
+    document.getElementById('trendSpinner').style.display = 'none';
+    document.getElementById('trendChartWrap').style.display = 'block';
   }
 }
 
-// ========== 売上入力 ==========
+function renderTrendChart(period) {
+  const labels = trendLabels.slice(-period);
+  const data = trendData.slice(-period);
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  if (trendChartObj) trendChartObj.destroy();
+  trendChartObj = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99,102,241,0.07)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: data.length <= 10 ? 4 : 2,
+        pointBackgroundColor: '#6366f1',
+        borderWidth: 2.5,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => fmt(ctx.raw) } }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 10 }, color: '#9ca3af', maxTicksLimit: period <= 7 ? 7 : period <= 15 ? 8 : 10 } },
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 10 }, color: '#9ca3af', callback: v => v === 0 ? '0' : (v/10000).toFixed(1) + '万' } }
+      }
+    }
+  });
+}
 
-document.getElementById('inputType').addEventListener('change', function() {
-  const sel = this.options[this.selectedIndex];
-  if (sel && sel.dataset.amount) {
-    document.getElementById('inputAmount').value = sel.dataset.amount;
-  }
-});
+function setPeriod(period) {
+  currentPeriod = period;
+  document.querySelectorAll('.period-btn').forEach(btn => {
+    const active = parseInt(btn.dataset.p) === period;
+    btn.className = `period-btn px-3 py-1 rounded-lg text-xs ${active ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'}`;
+  });
+  if (trendData.length) renderTrendChart(period);
+}
 
+// ========== クイック入力 ==========
+async function quickAdd(type, amount) {
+  try {
+    const r = await apiPost({ action: 'addSale', type, amount: Number(amount) });
+    if (r.success) {
+      showToast(`✅ ${type} ${fmt(amount)}`);
+      loadTodayStats();
+    } else showToast(r.message, true);
+  } catch(e) { showToast('登録エラー', true); }
+}
+
+// ========== 売上登録 ==========
 document.getElementById('addSaleBtn').addEventListener('click', async function() {
   const type = document.getElementById('inputType').value;
   const amount = Number(document.getElementById('inputAmount').value);
-  if (!type || !amount) {
-    showToast('種別と金額を入力してください', true);
-    return;
-  }
+  if (!type || !amount) { showToast('種別と金額を入力してください', true); return; }
   this.disabled = true;
-  this.innerHTML = '<div class="spinner" style="width:18px;height:18px;margin:0 auto;border-color:rgba(255,255,255,0.4);border-top-color:white;"></div>';
+  document.getElementById('addSaleSpinner').classList.remove('hidden');
   try {
-    const res = await apiPost({ action: 'addSale', type, amount });
-    if (res.success) {
-      showToast(`✅ ${type} ${fmt(amount)} を登録しました`);
-      loadHistory();
-      loadTodayStats();
-    } else {
-      showToast(res.message, true);
-    }
-  } catch(e) {
-    showToast('登録エラー', true);
-  } finally {
-    this.disabled = false;
-    this.innerHTML = '<span>✅ 登録する</span>';
-  }
+    const r = await apiPost({ action: 'addSale', type, amount });
+    if (r.success) { showToast(`✅ ${type} ${fmt(amount)}`); loadHistory(); loadTodayStats(); }
+    else showToast(r.message, true);
+  } catch(e) { showToast('登録エラー', true); }
+  finally { this.disabled = false; document.getElementById('addSaleSpinner').classList.add('hidden'); }
 });
 
 // ========== 履歴 ==========
-
 async function loadHistory() {
   document.getElementById('historySpinner').classList.remove('hidden');
   try {
-    const data = await apiGet({ action: 'getRecentHistory', days: 30 });
-    historyRecords = data.records || [];
-    renderHistory();
-  } catch(e) {
-    document.getElementById('historyList').innerHTML = '<div class="text-red-400 text-sm text-center py-4">履歴取得エラー</div>';
-  } finally {
-    document.getElementById('historySpinner').classList.add('hidden');
-  }
-}
-
-function renderHistory() {
-  const el = document.getElementById('historyList');
-  if (!historyRecords.length) {
-    el.innerHTML = '<div class="text-gray-400 text-sm text-center py-4">履歴がありません</div>';
-    return;
-  }
-  el.innerHTML = historyRecords.map(r => `
-    <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0 gap-2">
-      <div class="text-xs text-gray-400 min-w-[70px]">${r.date}<br>${r.time}</div>
-      <div class="text-xs font-medium text-indigo-700 bg-indigo-50 rounded px-2 py-0.5 flex-shrink-0">${r.type}</div>
-      <div class="text-sm font-semibold text-gray-800 flex-1 text-right">${fmt(r.amount)}</div>
-      <div class="flex gap-1 flex-shrink-0">
-        <button onclick="openEditSale(${r.rowIndex},'${escHtml(r.type)}',${r.amount})"
-          class="text-indigo-400 hover:text-indigo-600 p-1.5 rounded-lg hover:bg-indigo-50 transition-colors text-sm">✏️</button>
-        <button onclick="deleteSale(${r.rowIndex},'${r.date}')"
-          class="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors text-sm">🗑</button>
+    const d = await apiGet({ action: 'getRecentHistory', days: 30 });
+    const records = d.records || [];
+    const el = document.getElementById('historyList');
+    if (!records.length) { el.innerHTML = '<div class="text-center text-gray-400 py-4">履歴がありません</div>'; return; }
+    // 日付グルーピング
+    const groups = {};
+    records.forEach(r => { if (!groups[r.date]) groups[r.date] = []; groups[r.date].push(r); });
+    el.innerHTML = Object.entries(groups).map(([date, items]) => `
+      <div class="mb-2">
+        <div class="text-xs text-gray-400 font-medium py-1.5">${date}</div>
+        <div class="divide-y divide-gray-50">
+          ${items.map(r => `
+            <div class="flex items-center justify-between py-2 gap-2">
+              <span class="text-xs px-2 py-0.5 rounded-lg font-medium flex-shrink-0 ${r.type === '新規' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">${r.type}</span>
+              <span class="font-semibold text-gray-800 text-sm flex-1">${fmt(r.amount)}</span>
+              <span class="text-xs text-gray-400">${r.time}</span>
+              <button onclick="openEditSale(${r.rowIndex},'${escQ(r.type)}',${r.amount})" class="text-indigo-400 hover:text-indigo-600 p-1 rounded text-sm">✏️</button>
+              <button onclick="deleteSale(${r.rowIndex},'${date}')" class="text-red-400 hover:text-red-600 p-1 rounded text-sm">🗑</button>
+            </div>
+          `).join('')}
+        </div>
       </div>
-    </div>
-  `).join('');
+    `).join('');
+  } catch(e) { document.getElementById('historyList').innerHTML = '<div class="text-red-400 text-center py-4">履歴取得エラー</div>'; }
+  finally { document.getElementById('historySpinner').classList.add('hidden'); }
 }
 
-// ========== 修正モーダル ==========
-
+// ========== 修正 ==========
 function openEditSale(rowIndex, type, amount) {
   document.getElementById('editRowIndex').value = rowIndex;
   document.getElementById('editType').value = type;
   document.getElementById('editAmount').value = amount;
   document.getElementById('editModal').classList.add('open');
 }
-
-document.getElementById('closeEditModal').addEventListener('click', () => {
-  document.getElementById('editModal').classList.remove('open');
-});
-
-document.getElementById('editModal').addEventListener('click', function(e) {
-  if (e.target === this) this.classList.remove('open');
-});
-
+document.getElementById('closeEditModal').onclick = () => document.getElementById('editModal').classList.remove('open');
+document.getElementById('editModal').addEventListener('click', e => { if (e.target === document.getElementById('editModal')) document.getElementById('editModal').classList.remove('open'); });
 document.getElementById('confirmEditBtn').addEventListener('click', async function() {
   const rowIndex = Number(document.getElementById('editRowIndex').value);
   const type = document.getElementById('editType').value;
   const amount = Number(document.getElementById('editAmount').value);
-  if (!rowIndex || !type || !amount) {
-    showToast('全項目を入力してください', true); return;
-  }
+  if (!rowIndex || !type || !amount) { showToast('全項目を入力してください', true); return; }
   this.disabled = true;
   try {
-    const res = await apiPost({ action: 'editSale', rowIndex, type, amount });
-    if (res.success) {
-      showToast('✅ 修正しました');
-      document.getElementById('editModal').classList.remove('open');
-      loadHistory();
-      loadTodayStats();
-    } else {
-      showToast(res.message, true);
-    }
-  } catch(e) {
-    showToast('修正エラー', true);
-  } finally {
-    this.disabled = false;
-  }
+    const r = await apiPost({ action: 'editSale', rowIndex, type, amount });
+    if (r.success) { showToast('✅ 修正しました'); document.getElementById('editModal').classList.remove('open'); loadHistory(); loadTodayStats(); }
+    else showToast(r.message, true);
+  } catch(e) { showToast('修正エラー', true); }
+  finally { this.disabled = false; }
 });
 
 // ========== 削除 ==========
-
 async function deleteSale(rowIndex, dateStr) {
-  if (!confirm(`${dateStr} の売上を削除しますか？`)) return;
+  if (!confirm(`${dateStr}の売上を削除しますか？`)) return;
   try {
-    const res = await apiPost({ action: 'deleteSale', rowIndex });
-    if (res.success) {
-      showToast('🗑 削除しました');
-      loadHistory();
-      loadTodayStats();
-    } else {
-      showToast(res.message, true);
-    }
-  } catch(e) {
-    showToast('削除エラー', true);
-  }
+    const r = await apiPost({ action: 'deleteSale', rowIndex });
+    if (r.success) { showToast('削除しました'); loadHistory(); loadTodayStats(); }
+    else showToast(r.message, true);
+  } catch(e) { showToast('削除エラー', true); }
 }
 
 // ========== 集計 ==========
-
 function initStatsSelects() {
   const now = new Date();
-  const yearSel = document.getElementById('statsYear');
-  const monthSel = document.getElementById('statsMonth');
-  for (let y = now.getFullYear(); y >= now.getFullYear()-3; y--) {
-    yearSel.innerHTML += `<option value="${y}">${y}年</option>`;
-  }
-  for (let m = 1; m <= 12; m++) {
-    monthSel.innerHTML += `<option value="${m}" ${m === now.getMonth()+1 ? 'selected' : ''}>${m}月</option>`;
-  }
+  let yOpts = '', mOpts = '';
+  for (let y = now.getFullYear(); y >= now.getFullYear()-3; y--) yOpts += `<option value="${y}">${y}年</option>`;
+  for (let m = 1; m <= 12; m++) mOpts += `<option value="${m}" ${m === now.getMonth()+1 ? 'selected' : ''}>${m}月</option>`;
+  document.getElementById('statsYear').innerHTML = yOpts;
+  document.getElementById('statsMonth').innerHTML = mOpts;
 }
 
 async function loadStats() {
   const year = Number(document.getElementById('statsYear').value);
   const month = Number(document.getElementById('statsMonth').value);
-  document.getElementById('statsSpinner').classList.remove('hidden');
+  document.getElementById('statsChartSpinner').style.display = 'flex';
+  document.getElementById('monthChartWrap').style.display = 'none';
+  document.getElementById('trendChartWrap12').style.display = 'none';
   try {
-    const data = await apiGet({ action: 'getMonthStats', year, month });
-    document.getElementById('statsShinkiSales').textContent = fmt(data.shinkiSales);
-    document.getElementById('statsShinkiCount').textContent = `${data.shinkiCount}件`;
-    document.getElementById('statsJorenSales').textContent = fmt(data.jorenSales);
-    document.getElementById('statsJorenCount').textContent = `${data.jorenCount}件`;
-    document.getElementById('statsTotalSales').textContent = fmt(data.totalSales);
-    document.getElementById('statsTotalCount').textContent = `${data.totalCount}件`;
-
-    // 月次棒グラフ
-    renderMonthChart(year, month, data);
-
-    // 過去12ヶ月トレンド
-    await loadTrend();
-
-    // テーブル
-    renderStatsTable(year, month, data);
-  } catch(e) {
-    showToast('集計取得エラー', true);
-  } finally {
-    document.getElementById('statsSpinner').classList.add('hidden');
+    const d = await apiGet({ action: 'getMonthStats', year, month });
+    document.getElementById('statsShinkiSales').textContent = fmt(d.shinkiSales);
+    document.getElementById('statsShinkiCount').textContent = `${d.shinkiCount}件`;
+    document.getElementById('statsJorenSales').textContent = fmt(d.jorenSales);
+    document.getElementById('statsJorenCount').textContent = `${d.jorenCount}件`;
+    document.getElementById('statsTotalSales').textContent = fmt(d.totalSales);
+    document.getElementById('statsTotalCount').textContent = `${d.totalCount}件`;
+    renderMonthChart(d);
+    await loadTrend12();
+    renderStatsTable(year, month, d);
+  } catch(e) { showToast('集計取得エラー', true); }
+  finally {
+    document.getElementById('statsChartSpinner').style.display = 'none';
+    switchStatsChart(currentStatsChart);
   }
 }
 
-function renderMonthChart(year, month, data) {
+function renderMonthChart(d) {
   const ctx = document.getElementById('monthChart').getContext('2d');
-  if (monthChart) monthChart.destroy();
-  monthChart = new Chart(ctx, {
+  if (monthChartObj) monthChartObj.destroy();
+  monthChartObj = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: ['新規', '常連'],
-      datasets: [{
-        label: `${year}年${month}月`,
-        data: [data.shinkiSales, data.jorenSales],
-        backgroundColor: ['#6366f1', '#22c55e'],
-        borderRadius: 6,
-      }]
+      labels: ['新規','常連'],
+      datasets: [{ data: [d.shinkiSales, d.jorenSales], backgroundColor: ['#6366f1','#22c55e'], borderRadius: 8 }]
     },
     options: {
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: ctx => fmt(ctx.raw)
-          }
-        }
-      },
-      scales: {
-        y: {
-          ticks: {
-            callback: v => '¥' + v.toLocaleString()
-          }
-        }
-      }
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmt(c.raw) } } },
+      scales: { y: { ticks: { callback: v => '¥' + v.toLocaleString() } } }
     }
   });
 }
 
-async function loadTrend() {
+async function loadTrend12() {
   const now = new Date();
-  const labels = [], shinkiData = [], jorenData = [], totalData = [];
+  const labels = [], data = [];
   for (let i = 11; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
-    labels.push(`${d.getFullYear()}/${d.getMonth()+1}`);
-    const data = await apiGet({ action: 'getMonthStats', year: d.getFullYear(), month: d.getMonth()+1 });
-    shinkiData.push(data.shinkiSales);
-    jorenData.push(data.jorenSales);
-    totalData.push(data.totalSales);
+    labels.push(`${d.getMonth()+1}月`);
+    const res = await apiGet({ action: 'getMonthStats', year: d.getFullYear(), month: d.getMonth()+1 });
+    data.push(res.totalSales);
   }
-
-  const ctx = document.getElementById('trendChart').getContext('2d');
-  if (trendChart) trendChart.destroy();
-  trendChart = new Chart(ctx, {
+  const ctx = document.getElementById('trendChart12').getContext('2d');
+  if (trendChart12Obj) trendChart12Obj.destroy();
+  trendChart12Obj = new Chart(ctx, {
     type: 'line',
     data: {
       labels,
-      datasets: [
-        {
-          label: '合計',
-          data: totalData,
-          borderColor: '#6366f1',
-          backgroundColor: 'rgba(99,102,241,0.08)',
-          borderWidth: 2,
-          tension: 0.3,
-          fill: true,
-          pointRadius: 3,
-        },
-        {
-          label: '新規',
-          data: shinkiData,
-          borderColor: '#22c55e',
-          borderWidth: 1.5,
-          tension: 0.3,
-          fill: false,
-          pointRadius: 2,
-          borderDash: [4, 4],
-        },
-        {
-          label: '常連',
-          data: jorenData,
-          borderColor: '#f59e0b',
-          borderWidth: 1.5,
-          tension: 0.3,
-          fill: false,
-          pointRadius: 2,
-          borderDash: [4, 4],
-        }
-      ]
+      datasets: [{ data, borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.07)', fill: true, tension: 0.4, pointRadius: 4, borderWidth: 2.5 }]
     },
     options: {
-      responsive: true,
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label: ctx => `${ctx.dataset.label}: ${fmt(ctx.raw)}`
-          }
-        }
-      },
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmt(c.raw) } } },
       scales: {
-        y: {
-          ticks: {
-            callback: v => '¥' + v.toLocaleString()
-          }
-        }
+        y: { beginAtZero: true, ticks: { callback: v => v === 0 ? '0' : (v/10000).toFixed(1) + '万' } }
       }
     }
   });
 }
 
-function renderStatsTable(year, month, data) {
-  const el = document.getElementById('statsTable');
-  el.innerHTML = `
+function switchStatsChart(type) {
+  currentStatsChart = type;
+  document.getElementById('statsTabMonth').className = `px-3 py-1.5 rounded-lg text-xs font-medium ${type === 'month' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'}`;
+  document.getElementById('statsTabTrend').className = `px-3 py-1.5 rounded-lg text-xs font-medium ${type === 'trend' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'}`;
+  document.getElementById('monthChartWrap').style.display = type === 'month' ? 'block' : 'none';
+  document.getElementById('trendChartWrap12').style.display = type === 'trend' ? 'block' : 'none';
+}
+
+function renderStatsTable(year, month, d) {
+  document.getElementById('statsTable').innerHTML = `
     <table class="w-full text-sm">
-      <thead>
-        <tr class="bg-indigo-50">
-          <th class="text-left px-3 py-2 text-xs text-gray-500 font-medium rounded-l-lg">項目</th>
-          <th class="text-right px-3 py-2 text-xs text-gray-500 font-medium">件数</th>
-          <th class="text-right px-3 py-2 text-xs text-gray-500 font-medium rounded-r-lg">売上</th>
-        </tr>
-      </thead>
+      <thead><tr class="bg-gray-50">
+        <th class="text-left px-3 py-2 text-xs text-gray-500 font-medium">項目</th>
+        <th class="text-right px-3 py-2 text-xs text-gray-500 font-medium">件数</th>
+        <th class="text-right px-3 py-2 text-xs text-gray-500 font-medium">売上</th>
+      </tr></thead>
       <tbody>
-        <tr class="border-b border-gray-50">
-          <td class="px-3 py-2.5 text-gray-600">🆕 新規</td>
-          <td class="px-3 py-2.5 text-right text-gray-700">${data.shinkiCount}件</td>
-          <td class="px-3 py-2.5 text-right font-medium text-indigo-700">${fmt(data.shinkiSales)}</td>
+        <tr class="border-t border-gray-100">
+          <td class="px-3 py-2.5 text-gray-600">新規</td>
+          <td class="px-3 py-2.5 text-right text-gray-700">${d.shinkiCount}件</td>
+          <td class="px-3 py-2.5 text-right font-medium text-indigo-700">${fmt(d.shinkiSales)}</td>
         </tr>
-        <tr class="border-b border-gray-50">
-          <td class="px-3 py-2.5 text-gray-600">👥 常連</td>
-          <td class="px-3 py-2.5 text-right text-gray-700">${data.jorenCount}件</td>
-          <td class="px-3 py-2.5 text-right font-medium text-green-700">${fmt(data.jorenSales)}</td>
+        <tr class="border-t border-gray-100">
+          <td class="px-3 py-2.5 text-gray-600">常連</td>
+          <td class="px-3 py-2.5 text-right text-gray-700">${d.jorenCount}件</td>
+          <td class="px-3 py-2.5 text-right font-medium text-green-700">${fmt(d.jorenSales)}</td>
         </tr>
-        <tr class="bg-indigo-50">
-          <td class="px-3 py-2.5 font-semibold text-gray-800 rounded-l-lg">💰 合計</td>
-          <td class="px-3 py-2.5 text-right font-semibold text-gray-800">${data.totalCount}件</td>
-          <td class="px-3 py-2.5 text-right font-bold text-indigo-800 rounded-r-lg">${fmt(data.totalSales)}</td>
+        <tr class="border-t border-gray-100 bg-indigo-50">
+          <td class="px-3 py-2.5 font-semibold text-gray-800">合計</td>
+          <td class="px-3 py-2.5 text-right font-semibold text-gray-800">${d.totalCount}件</td>
+          <td class="px-3 py-2.5 text-right font-bold text-indigo-800">${fmt(d.totalSales)}</td>
         </tr>
       </tbody>
-    </table>
-  `;
+    </table>`;
 }
 
 document.getElementById('loadStatsBtn').addEventListener('click', loadStats);
 
 // ========== マスタ追加 ==========
-
 document.getElementById('addMasterBtn').addEventListener('click', async function() {
   const type = document.getElementById('newMasterType').value.trim();
   const amount = Number(document.getElementById('newMasterAmount').value);
   const desc = document.getElementById('newMasterDesc').value.trim();
-  if (!type || !amount) {
-    showToast('種別名と金額は必須です', true); return;
-  }
+  if (!type || !amount) { showToast('種別名と金額は必須です', true); return; }
   this.disabled = true;
   try {
-    const res = await apiPost({ action: 'addMaster', type, amount, description: desc });
-    if (res.success) {
+    const r = await apiPost({ action: 'addMaster', type, amount, description: desc });
+    if (r.success) {
       showToast('✅ マスタを追加しました');
-      document.getElementById('newMasterType').value = '';
-      document.getElementById('newMasterAmount').value = '';
-      document.getElementById('newMasterDesc').value = '';
+      ['newMasterType','newMasterAmount','newMasterDesc'].forEach(id => document.getElementById(id).value = '');
       await loadMaster();
-    } else {
-      showToast(res.message, true);
-    }
-  } catch(e) {
-    showToast('マスタ追加エラー', true);
-  } finally {
-    this.disabled = false;
-  }
+    } else showToast(r.message, true);
+  } catch(e) { showToast('マスタ追加エラー', true); }
+  finally { this.disabled = false; }
 });
 
 // ========== マスタ編集 ==========
-
 function openEditMaster(rowIndex, type, amount, desc) {
   document.getElementById('editMasterRowIndex').value = rowIndex;
   document.getElementById('editMasterType').value = type;
@@ -876,69 +789,40 @@ function openEditMaster(rowIndex, type, amount, desc) {
   document.getElementById('editMasterDesc').value = desc;
   document.getElementById('editMasterModal').classList.add('open');
 }
-
-document.getElementById('closeEditMasterModal').addEventListener('click', () => {
-  document.getElementById('editMasterModal').classList.remove('open');
-});
-
-document.getElementById('editMasterModal').addEventListener('click', function(e) {
-  if (e.target === this) this.classList.remove('open');
-});
-
+document.getElementById('closeEditMasterModal').onclick = () => document.getElementById('editMasterModal').classList.remove('open');
+document.getElementById('editMasterModal').addEventListener('click', e => { if (e.target === document.getElementById('editMasterModal')) document.getElementById('editMasterModal').classList.remove('open'); });
 document.getElementById('confirmEditMasterBtn').addEventListener('click', async function() {
   const rowIndex = Number(document.getElementById('editMasterRowIndex').value);
   const type = document.getElementById('editMasterType').value.trim();
   const amount = Number(document.getElementById('editMasterAmount').value);
   const desc = document.getElementById('editMasterDesc').value.trim();
-  if (!rowIndex || !type || !amount) {
-    showToast('全項目を入力してください', true); return;
-  }
+  if (!rowIndex || !type || !amount) { showToast('全項目を入力してください', true); return; }
   this.disabled = true;
   try {
-    const res = await apiPost({ action: 'updateMaster', rowIndex, type, amount, description: desc });
-    if (res.success) {
-      showToast('✅ マスタを更新しました');
-      document.getElementById('editMasterModal').classList.remove('open');
-      await loadMaster();
-    } else {
-      showToast(res.message, true);
-    }
-  } catch(e) {
-    showToast('マスタ更新エラー', true);
-  } finally {
-    this.disabled = false;
-  }
+    const r = await apiPost({ action: 'updateMaster', rowIndex, type, amount, description: desc });
+    if (r.success) { showToast('✅ マスタを更新しました'); document.getElementById('editMasterModal').classList.remove('open'); await loadMaster(); }
+    else showToast(r.message, true);
+  } catch(e) { showToast('マスタ更新エラー', true); }
+  finally { this.disabled = false; }
 });
 
-// ========== マスタ削除 ==========
-
 async function deleteMaster(rowIndex, type) {
-  if (!confirm(`「${type}」を無効化しますか？`)) return;
+  if (!confirm(`「${type}」を削除しますか？`)) return;
   try {
-    const res = await apiPost({ action: 'deleteMaster', rowIndex });
-    if (res.success) {
-      showToast('🗑 マスタを無効化しました');
-      await loadMaster();
-    } else {
-      showToast(res.message, true);
-    }
-  } catch(e) {
-    showToast('マスタ削除エラー', true);
-  }
+    const r = await apiPost({ action: 'deleteMaster', rowIndex });
+    if (r.success) { showToast('削除しました'); await loadMaster(); }
+    else showToast(r.message, true);
+  } catch(e) { showToast('マスタ削除エラー', true); }
 }
 
 // ========== 経理 ==========
-
 function initAccSelects() {
   const now = new Date();
-  const yearSel = document.getElementById('accYear');
-  const monthSel = document.getElementById('accMonth');
-  for (let y = now.getFullYear(); y >= now.getFullYear()-3; y--) {
-    yearSel.innerHTML += `<option value="${y}">${y}年</option>`;
-  }
-  for (let m = 1; m <= 12; m++) {
-    monthSel.innerHTML += `<option value="${m}" ${m === now.getMonth()+1 ? 'selected' : ''}>${m}月</option>`;
-  }
+  let yOpts = '', mOpts = '';
+  for (let y = now.getFullYear(); y >= now.getFullYear()-3; y--) yOpts += `<option value="${y}">${y}年</option>`;
+  for (let m = 1; m <= 12; m++) mOpts += `<option value="${m}" ${m === now.getMonth()+1 ? 'selected' : ''}>${m}月</option>`;
+  document.getElementById('accYear').innerHTML = yOpts;
+  document.getElementById('accMonth').innerHTML = mOpts;
 }
 
 document.getElementById('genAccBtn').addEventListener('click', async function() {
@@ -949,56 +833,33 @@ document.getElementById('genAccBtn').addEventListener('click', async function() 
   document.getElementById('accResult').classList.add('hidden');
   this.disabled = true;
   try {
-    const res = await apiPost({ action: 'generateAccounting', year, month });
-    if (res.success) {
-      document.getElementById('accResultMsg').textContent = res.message;
-      document.getElementById('accSheetLink').href = res.spreadsheetUrl || SPREADSHEET_URL;
+    const r = await apiPost({ action: 'generateAccounting', year, month });
+    if (r.success) {
+      document.getElementById('accResultMsg').textContent = r.message;
+      document.getElementById('accSheetLink').href = r.spreadsheetUrl || SPREADSHEET_URL;
       document.getElementById('accResult').classList.remove('hidden');
       showToast('✅ 経理シートを生成しました');
-    } else {
-      showToast(res.message, true);
-    }
-  } catch(e) {
-    showToast('経理シート生成エラー', true);
-  } finally {
-    document.getElementById('genAccBtnText').textContent = '📑 経理シートを生成する';
-    document.getElementById('genAccSpinner').classList.add('hidden');
-    this.disabled = false;
-  }
+    } else showToast(r.message, true);
+  } catch(e) { showToast('経理シート生成エラー', true); }
+  finally { document.getElementById('genAccBtnText').textContent = '経理シートを生成する'; document.getElementById('genAccSpinner').classList.add('hidden'); this.disabled = false; }
 });
 
-// ========== タブ切り替え ==========
-
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', function() {
-    const tab = this.dataset.tab;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => {
-      c.classList.remove('active');
-      c.classList.remove('fade-in');
-    });
-    this.classList.add('active');
-    const el = document.getElementById('tab-' + tab);
-    el.classList.add('active');
-    setTimeout(() => el.classList.add('fade-in'), 10);
-
-    // タブ固有の読込
-    if (tab === 'input') loadHistory();
-    if (tab === 'stats') loadStats();
-    if (tab === 'master') loadMaster();
-  });
+// ========== バックアップ ==========
+document.getElementById('backupBtn').addEventListener('click', async function() {
+  document.getElementById('backupBtnText').textContent = 'バックアップ中…';
+  document.getElementById('backupSpinner').classList.remove('hidden');
+  this.disabled = true;
+  try {
+    const r = await apiPost({ action: 'backup' });
+    if (r.success) showToast('✅ バックアップ完了');
+    else showToast(r.message, true);
+  } catch(e) { showToast('バックアップエラー', true); }
+  finally { document.getElementById('backupBtnText').textContent = '今すぐバックアップ'; document.getElementById('backupSpinner').classList.add('hidden'); this.disabled = false; }
 });
-
-// ========== ヘルパー ==========
-
-function escHtml(str) {
-  return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-}
 
 // ========== 初期化 ==========
-
 async function init() {
-  updateHeaderDate();
+  updateDate();
   initStatsSelects();
   initAccSelects();
   await loadMaster();
