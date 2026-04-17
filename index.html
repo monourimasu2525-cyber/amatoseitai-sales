@@ -481,43 +481,58 @@ function renderQuickBtns() {
   }).join('');
 }
 
-// ===== キャッシュ =====
-const cache = {};
-function cacheSet(key, val) { cache[key] = { val, ts: Date.now() }; }
-function cacheGet(key, ttlMs=60000) {
-  const c = cache[key];
-  return (c && Date.now()-c.ts < ttlMs) ? c.val : null;
+// ===== LocalStorageキャッシュ =====
+const LS_KEY = 'amato_cache_v2';
+const LS_TTL = 5 * 60 * 1000;
+
+function lsSet(key, val) {
+  try {
+    const store = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    store[key] = { val, ts: Date.now() };
+    localStorage.setItem(LS_KEY, JSON.stringify(store));
+  } catch(e) {}
+}
+function lsGet(key, ttlMs=LS_TTL) {
+  try {
+    const store = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    const c = store[key];
+    return (c && Date.now()-c.ts < ttlMs) ? c.val : null;
+  } catch(e) { return null; }
+}
+function lsClear(...keys) {
+  try {
+    const store = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    keys.forEach(k => delete store[k]);
+    localStorage.setItem(LS_KEY, JSON.stringify(store));
+  } catch(e) {}
+}
+const memCache = {};
+function memSet(key, val) { memCache[key] = { val, ts: Date.now() }; }
+function memGet(key, ttlMs=60000) { const c=memCache[key]; return (c&&Date.now()-c.ts<ttlMs)?c.val:null; }
+function memClear(...keys) { keys.forEach(k => delete memCache[k]); }
+
+// ===== initData（1発API・全データ取得） =====
+async function loadInitData() {
+  const lsCached = lsGet('initData');
+  if (lsCached) applyInitData(lsCached);
+  try {
+    const d = await apiGet({ action:'initData' });
+    lsSet('initData', d);
+    memSet('initData', d);
+    applyInitData(d);
+  } catch(e) {
+    if (!lsCached) showToast('データ取得エラー', true);
+  }
 }
 
-// ===== 今日の統計（並列化・キャッシュ対応） =====
-async function loadTodayStats() {
-  const now = new Date();
-  const curMonth = now.getMonth()+1;
-  const prevMonth = curMonth === 1 ? 12 : curMonth - 1;
-  const prevYear  = curMonth === 1 ? now.getFullYear()-1 : now.getFullYear();
-
-  // キャッシュがあれば即表示（60秒TTL）
-  const cached = cacheGet('homeAll');
-  if (cached) { applyHomeData(cached); }
-
-  try {
-    // 3リクエスト同時発行（getRecentHistory days:30 で今日分・グラフ両方賄う）
-    const [today, thisM, prevM, history] = await Promise.all([
-      apiGet({ action:'getTodayStats' }),
-      apiGet({ action:'getMonthStats', year:now.getFullYear(), month:curMonth }),
-      apiGet({ action:'getMonthStats', year:prevYear, month:prevMonth }),
-      apiGet({ action:'getRecentHistory', days:30 })
-    ]);
-    const bundle = { today, thisM, prevM, history };
-    cacheSet('homeAll', bundle);
-    applyHomeData(bundle);
-  } catch(e) {
-    if (!cached) document.getElementById('kpi_today').textContent = 'エラー';
+function applyInitData(d) {
+  if (d.master) { masterItems=d.master; renderMasterList(); updateSelects(); renderQuickBtns(); }
+  if (d.todayStats && d.thisMonth && d.prevMonth && d.history) {
+    applyHomeData({ today:d.todayStats, thisM:d.thisMonth, prevM:d.prevMonth, history:d.history });
   }
 }
 
 function applyHomeData({ today, thisM, prevM, history }) {
-  // KPI今日
   document.getElementById('kpi_today').textContent = fmt(today.totalSales);
   document.getElementById('kpi_today_count').textContent = `${today.totalCount}件`;
   document.getElementById('kpi_shinki').textContent = fmt(today.shinkiSales);
@@ -525,37 +540,24 @@ function applyHomeData({ today, thisM, prevM, history }) {
   document.getElementById('kpi_joren').textContent = fmt(today.jorenSales);
   document.getElementById('kpi_joren_count').textContent = `${today.jorenCount}件`;
   document.getElementById('todayBadge').textContent = `${today.totalCount}件`;
-
-  // KPI今月
   document.getElementById('kpi_month').textContent = fmt(thisM.totalSales);
   if (prevM.totalSales > 0) {
     const pct = Math.round((thisM.totalSales - prevM.totalSales) / prevM.totalSales * 100);
     const el = document.getElementById('kpi_month_diff');
     el.textContent = `${pct>=0?'▲':'▼'}${Math.abs(pct)}% 先月比`;
     el.style.color = pct>=0 ? '#6ee7b7' : '#fca5a5';
-  } else {
-    document.getElementById('kpi_month_diff').textContent = '';
-  }
-
-  // 今日の履歴
+  } else { document.getElementById('kpi_month_diff').textContent = ''; }
   applyTodayHistory(history);
-
-  // トレンドグラフ
   applyTrendData(history);
 }
 
 function applyTodayHistory(history) {
-  const records = (history.records || []).filter(r => {
-    const now = new Date();
-    const today = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
-    return r.date === today;
-  }).slice(0, 6);
+  const now = new Date();
+  const todayKey = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
+  const records = (history.records||[]).filter(r=>r.date===todayKey).slice(0,6);
   const el = document.getElementById('todayList');
-  if (!records.length) {
-    el.innerHTML = '<div style="text-align:center;color:var(--sub2);padding:12px 0;">まだ記録がありません</div>';
-    return;
-  }
-  el.innerHTML = records.map(r => `
+  if (!records.length) { el.innerHTML='<div style="text-align:center;color:var(--sub2);padding:12px 0;">まだ記録がありません</div>'; return; }
+  el.innerHTML = records.map(r=>`
     <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
       <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;flex-shrink:0;
         ${r.type==='新規'?'background:var(--accent-l);color:var(--accent);border:1px solid var(--accent-m);':'background:var(--card2);color:var(--sub);border:1px solid var(--border);'}">${r.type}</span>
@@ -566,21 +568,33 @@ function applyTodayHistory(history) {
   `).join('');
 }
 
-// ===== トレンドグラフ =====
 function applyTrendData(history) {
-  document.getElementById('trendSpinner').style.display = 'none';
-  document.getElementById('trendWrap').style.display = 'block';
-  const records = history.records || [];
-  const dayMap = {};
-  records.forEach(r => { dayMap[r.date] = (dayMap[r.date]||0) + r.amount; });
-  trendAllLabels = []; trendAllData = [];
-  for (let i=29; i>=0; i--) {
-    const dt = new Date(); dt.setDate(dt.getDate()-i);
-    const key = `${dt.getFullYear()}/${dt.getMonth()+1}/${dt.getDate()}`;
+  document.getElementById('trendSpinner').style.display='none';
+  document.getElementById('trendWrap').style.display='block';
+  const dayMap={};
+  (history.records||[]).forEach(r=>{ dayMap[r.date]=(dayMap[r.date]||0)+r.amount; });
+  trendAllLabels=[]; trendAllData=[];
+  for(let i=29;i>=0;i--){
+    const dt=new Date(); dt.setDate(dt.getDate()-i);
+    const key=`${dt.getFullYear()}/${dt.getMonth()+1}/${dt.getDate()}`;
     trendAllLabels.push(`${dt.getMonth()+1}/${dt.getDate()}`);
     trendAllData.push(dayMap[key]||0);
   }
   renderTrendChart(currentPeriod);
+}
+
+async function refreshAll() {
+  lsClear('initData');
+  memClear('initData','history');
+  await loadInitData();
+}
+
+async function quickAdd(type, amount) {
+  try {
+    const r = await apiPost({ action:'addSale', type, amount:Number(amount) });
+    if (r.success) { showToast(`✅ ${type} ${fmt(amount)}`); refreshAll(); }
+    else showToast(r.message, true);
+  } catch(e) { showToast('登録エラー', true); }
 }
 
 function renderTrendChart(period) {
@@ -617,17 +631,6 @@ function setPeriod(p) {
 }
 
 // ===== クイック入力 =====
-async function quickAdd(type, amount) {
-  try {
-    const r = await apiPost({ action:'addSale', type, amount:Number(amount) });
-    if (r.success) {
-      showToast(`✅ ${type} ${fmt(amount)}`);
-      delete cache['homeAll']; delete cache['history'];
-      loadTodayStats();
-    } else showToast(r.message, true);
-  } catch(e) { showToast('登録エラー', true); }
-}
-
 // ===== 売上登録 =====
 document.getElementById('addSaleBtn').addEventListener('click', async function() {
   const type = document.getElementById('inputType').value;
@@ -639,8 +642,7 @@ document.getElementById('addSaleBtn').addEventListener('click', async function()
     const r = await apiPost({ action:'addSale', type, amount });
     if (r.success) {
       showToast(`✅ ${type} ${fmt(amount)}`);
-      delete cache['homeAll']; delete cache['history'];
-      loadHistory(); loadTodayStats();
+      refreshAll(); loadHistory();
     } else showToast(r.message, true);
   } catch(e) { showToast('登録エラー', true); }
   finally { this.disabled=false; document.getElementById('addSaleSpinner').style.display='none'; }
@@ -704,8 +706,7 @@ document.getElementById('confirmEditBtn').addEventListener('click', async functi
     if (r.success) {
       showToast('✅ 修正しました');
       document.getElementById('editModal').classList.remove('open');
-      delete cache['homeAll']; delete cache['history'];
-      loadHistory(); loadTodayStats();
+      refreshAll(); loadHistory();
     }
     else showToast(r.message,true);
   } catch(e) { showToast('修正エラー',true); }
@@ -719,8 +720,7 @@ async function deleteSale(rowIndex, dateStr) {
     const r = await apiPost({ action:'deleteSale', rowIndex });
     if (r.success) {
       showToast('削除しました');
-      delete cache['homeAll']; delete cache['history'];
-      loadHistory(); loadTodayStats();
+      refreshAll(); loadHistory();
     }
     else showToast(r.message,true);
   } catch(e) { showToast('削除エラー',true); }
@@ -1092,7 +1092,7 @@ async function init() {
   updateDate();
   initSelects();
   // マスタとホームデータを同時に取得
-  await Promise.all([loadMaster(), loadTodayStats()]);
+  await loadInitData();
 }
 init();
 </script>
