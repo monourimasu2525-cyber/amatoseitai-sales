@@ -688,6 +688,14 @@ document.getElementById('addSaleBtn').addEventListener('click', async function()
 async function loadHistory() {
   document.getElementById('histSpinner').style.display = 'block';
 
+  // initDataキャッシュから即表示
+  const initCached = memGet('initData') || lsGet('initData');
+  if (initCached && initCached.history) {
+    renderHistory(initCached.history);
+    document.getElementById('histSpinner').style.display = 'none';
+    return;
+  }
+
   // キャッシュ即表示（30秒TTL）
   const cached = cacheGet('history', 30000);
   if (cached) renderHistory(cached);
