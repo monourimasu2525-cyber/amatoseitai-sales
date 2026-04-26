@@ -4,28 +4,12 @@
 function updateSummarySheet() {
   try {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    // ✅ シートを完全削除して再作成（古いデータ・検証・フォーマットを完全リセット）
     var summarySheet = ss.getSheetByName('集計');
-    if (!summarySheet) {
-      summarySheet = ss.insertSheet('集計');
+    if (summarySheet) {
+      ss.deleteSheet(summarySheet);
     }
-
-    // 既存グラフを全削除
-    var charts = summarySheet.getCharts();
-    charts.forEach(function(chart) {
-      summarySheet.removeChart(chart);
-    });
-
-    // ✅ バグ修正: データ検証・コンテンツ・フォーマット・余分な列を全クリア
-    summarySheet.clearContents();
-    summarySheet.clearFormats();
-    summarySheet.clearNotes();
-    summarySheet.getRange(1, 1, summarySheet.getMaxRows(), summarySheet.getMaxColumns()).clearDataValidations();
-
-    // 余分な列を削除（H列以降）
-    var maxCols = summarySheet.getMaxColumns();
-    if (maxCols > 9) {
-      summarySheet.deleteColumns(10, maxCols - 9);
-    }
+    summarySheet = ss.insertSheet('集計');
 
     var now = new Date();
     var manager = new SalesManager(SPREADSHEET_ID);
