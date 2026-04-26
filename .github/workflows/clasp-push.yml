@@ -1,0 +1,32 @@
+name: GAS自動デプロイ (clasp push)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: Node.js セットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: clasp インストール
+        run: npm install -g @google/clasp
+
+      - name: 認証情報を設定
+        run: echo '${{ secrets.CLASPRC_JSON }}' > ~/.clasprc.json
+
+      - name: GAS にデプロイ (clasp push)
+        run: |
+          cd src
+          clasp push --force
