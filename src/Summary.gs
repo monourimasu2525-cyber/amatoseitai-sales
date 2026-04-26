@@ -15,102 +15,223 @@ function updateSummarySheet() {
       summarySheet.removeChart(chart);
     });
 
+    // ✅ バグ修正: データ検証・コンテンツ・フォーマット・余分な列を全クリア
     summarySheet.clearContents();
     summarySheet.clearFormats();
+    summarySheet.clearNotes();
+    summarySheet.getRange(1, 1, summarySheet.getMaxRows(), summarySheet.getMaxColumns()).clearDataValidations();
+
+    // 余分な列を削除（H列以降）
+    var maxCols = summarySheet.getMaxColumns();
+    if (maxCols > 9) {
+      summarySheet.deleteColumns(10, maxCols - 9);
+    }
 
     var now = new Date();
-    var headers = ['年月', '新規件数', '新規売上', '常連件数', '常連売上', '合計件数', '合計売上'];
-    var rows = [headers];
+    var manager = new SalesManager(SPREADSHEET_ID);
 
-    var totalShinki = 0, totalShinkiSales = 0, totalJoren = 0, totalJorenSales = 0, totalCount = 0, totalSales = 0;
+    // ===== タイトルエリア =====
+    var titleRange = summarySheet.getRange(1, 1, 1, 9);
+    titleRange.merge();
+    titleRange.setValue('📊 あまと整体院 売上集計レポート（過去12ヶ月）');
+    titleRange.setBackground('#1a237e');
+    titleRange.setFontColor('#ffffff');
+    titleRange.setFontWeight('bold');
+    titleRange.setFontSize(14);
+    titleRange.setHorizontalAlignment('center');
+    titleRange.setVerticalAlignment('middle');
+    summarySheet.setRowHeight(1, 44);
+
+    // 更新日時
+    var updateRange = summarySheet.getRange(2, 1, 1, 9);
+    updateRange.merge();
+    var dateStr = now.getFullYear() + '年' + (now.getMonth()+1) + '月' + now.getDate() + '日 ' +
+      String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ' 更新';
+    updateRange.setValue('最終更新：' + dateStr);
+    updateRange.setBackground('#283593');
+    updateRange.setFontColor('#c5cae9');
+    updateRange.setFontSize(10);
+    updateRange.setHorizontalAlignment('right');
+    summarySheet.setRowHeight(2, 22);
+
+    // 空白行
+    summarySheet.setRowHeight(3, 12);
+
+    // ===== ヘッダー行（4行目） =====
+    var headers = ['年月', '新規件数', '新規売上', '常連件数', '常連売上', '合計件数', '合計売上', '客単価', '前月比'];
+    var headerRange = summarySheet.getRange(4, 1, 1, headers.length);
+    headerRange.setValues([headers]);
+    headerRange.setBackground('#3949ab');
+    headerRange.setFontColor('#ffffff');
+    headerRange.setFontWeight('bold');
+    headerRange.setFontSize(11);
+    headerRange.setHorizontalAlignment('center');
+    headerRange.setVerticalAlignment('middle');
+    summarySheet.setRowHeight(4, 36);
+    summarySheet.setFrozenRows(4);
+
+    // ===== データ収集（過去12ヶ月） =====
+    var monthData = [];
+    var totalShinki = 0, totalShinkiSales = 0, totalJoren = 0, totalJorenSales = 0;
+    var totalCount = 0, totalSales = 0;
 
     for (var i = 11; i >= 0; i--) {
       var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       var y = d.getFullYear();
       var m = d.getMonth() + 1;
-      var manager = new SalesManager(SPREADSHEET_ID);
       var stats = manager.getMonthStats(y, m);
+      monthData.push({
+        label: y + '/' + String(m).padStart(2,'0'),
+        shinkiCount: stats.shinkiCount,
+        shinkiSales: stats.shinkiSales,
+        jorenCount: stats.jorenCount,
+        jorenSales: stats.jorenSales,
+        totalCount: stats.totalCount,
+        totalSales: stats.totalSales
+      });
       totalShinki += stats.shinkiCount;
       totalShinkiSales += stats.shinkiSales;
       totalJoren += stats.jorenCount;
       totalJorenSales += stats.jorenSales;
       totalCount += stats.totalCount;
       totalSales += stats.totalSales;
+    }
+
+    // ===== データ行書き込み（5行目〜） =====
+    var rows = [];
+    for (var j = 0; j < monthData.length; j++) {
+      var md = monthData[j];
+      var tanka = md.totalCount > 0 ? Math.round(md.totalSales / md.totalCount) : 0;
+      var zengetsu = j > 0 ? monthData[j-1].totalSales : 0;
+      var zengetsuHi = '';
+      if (j > 0 && zengetsu > 0) {
+        var ratio = ((md.totalSales - zengetsu) / zengetsu * 100).toFixed(1);
+        zengetsuHi = (ratio >= 0 ? '+' : '') + ratio + '%';
+      } else if (j === 0) {
+        zengetsuHi = '-';
+      } else {
+        zengetsuHi = md.totalSales > 0 ? '新規' : '-';
+      }
       rows.push([
-        y + '年' + m + '月',
-        stats.shinkiCount,
-        stats.shinkiSales,
-        stats.jorenCount,
-        stats.jorenSales,
-        stats.totalCount,
-        stats.totalSales
+        md.label,
+        md.shinkiCount,
+        md.shinkiSales,
+        md.jorenCount,
+        md.jorenSales,
+        md.totalCount,
+        md.totalSales,
+        tanka,
+        zengetsuHi
       ]);
     }
 
-    rows.push(['【12ヶ月合計】', totalShinki, totalShinkiSales, totalJoren, totalJorenSales, totalCount, totalSales]);
+    // 合計行
+    var avgTanka = totalCount > 0 ? Math.round(totalSales / totalCount) : 0;
+    rows.push(['【12ヶ月合計】', totalShinki, totalShinkiSales, totalJoren, totalJorenSales, totalCount, totalSales, avgTanka, '']);
 
-    var range = summarySheet.getRange(1, 1, rows.length, headers.length);
-    range.setValues(rows);
+    var dataStartRow = 5;
+    var dataRange = summarySheet.getRange(dataStartRow, 1, rows.length, headers.length);
+    dataRange.setValues(rows);
 
-    // ヘッダー行書式
-    var headerRange = summarySheet.getRange(1, 1, 1, headers.length);
-    headerRange.setBackground('#1a237e');
-    headerRange.setFontColor('#ffffff');
-    headerRange.setFontWeight('bold');
-    headerRange.setFontSize(11);
-    headerRange.setHorizontalAlignment('center');
-    headerRange.setVerticalAlignment('middle');
-    summarySheet.setRowHeight(1, 36);
-    summarySheet.setFrozenRows(1);
-
-    // データ行の交互背景色
-    for (var r = 2; r <= rows.length - 1; r++) {
-      var rowRange = summarySheet.getRange(r, 1, 1, headers.length);
-      rowRange.setBackground(r % 2 === 0 ? '#e8eaf6' : '#ffffff');
+    // ===== データ行のフォーマット =====
+    for (var r = 0; r < rows.length - 1; r++) {
+      var rowRange = summarySheet.getRange(dataStartRow + r, 1, 1, headers.length);
+      var bgColor = r % 2 === 0 ? '#ffffff' : '#e8eaf6';
+      rowRange.setBackground(bgColor);
       rowRange.setFontColor('#212121');
+      rowRange.setFontSize(11);
+      rowRange.setVerticalAlignment('middle');
+      summarySheet.setRowHeight(dataStartRow + r, 28);
+
+      // 前月比の色付け
+      var zenHi = rows[r][8];
+      var zenCell = summarySheet.getRange(dataStartRow + r, 9);
+      if (typeof zenHi === 'string' && zenHi.startsWith('+')) {
+        zenCell.setFontColor('#2e7d32');
+        zenCell.setFontWeight('bold');
+      } else if (typeof zenHi === 'string' && zenHi.startsWith('-') && zenHi !== '-') {
+        zenCell.setFontColor('#c62828');
+        zenCell.setFontWeight('bold');
+      }
     }
 
-    // 合計行書式
-    var totalRowRange = summarySheet.getRange(rows.length, 1, 1, headers.length);
+    // 合計行フォーマット
+    var totalRowRange = summarySheet.getRange(dataStartRow + rows.length - 1, 1, 1, headers.length);
     totalRowRange.setBackground('#1a237e');
     totalRowRange.setFontColor('#ffffff');
     totalRowRange.setFontWeight('bold');
     totalRowRange.setFontSize(11);
+    summarySheet.setRowHeight(dataStartRow + rows.length - 1, 32);
 
-    // 数値列を通貨フォーマット
-    summarySheet.getRange(2, 3, rows.length - 1, 1).setNumberFormat('¥#,##0');
-    summarySheet.getRange(2, 5, rows.length - 1, 1).setNumberFormat('¥#,##0');
-    summarySheet.getRange(2, 7, rows.length - 1, 1).setNumberFormat('¥#,##0');
+    // 数値列フォーマット（通貨）
+    var numRows = rows.length;
+    summarySheet.getRange(dataStartRow, 3, numRows, 1).setNumberFormat('¥#,##0');
+    summarySheet.getRange(dataStartRow, 5, numRows, 1).setNumberFormat('¥#,##0');
+    summarySheet.getRange(dataStartRow, 7, numRows, 1).setNumberFormat('¥#,##0');
+    summarySheet.getRange(dataStartRow, 8, numRows, 1).setNumberFormat('¥#,##0');
+
+    // 件数列は中央揃え
+    summarySheet.getRange(dataStartRow, 2, numRows, 1).setHorizontalAlignment('center');
+    summarySheet.getRange(dataStartRow, 4, numRows, 1).setHorizontalAlignment('center');
+    summarySheet.getRange(dataStartRow, 6, numRows, 1).setHorizontalAlignment('center');
+    summarySheet.getRange(dataStartRow, 9, numRows, 1).setHorizontalAlignment('center');
 
     // 枠線
-    summarySheet.getRange(1, 1, rows.length, headers.length)
+    summarySheet.getRange(4, 1, rows.length + 1, headers.length)
       .setBorder(true, true, true, true, true, true, '#9e9e9e', SpreadsheetApp.BorderStyle.SOLID);
 
-    summarySheet.autoResizeColumns(1, headers.length);
+    // 列幅調整
+    summarySheet.setColumnWidth(1, 90);
+    summarySheet.setColumnWidth(2, 80);
+    summarySheet.setColumnWidth(3, 100);
+    summarySheet.setColumnWidth(4, 80);
+    summarySheet.setColumnWidth(5, 100);
+    summarySheet.setColumnWidth(6, 80);
+    summarySheet.setColumnWidth(7, 110);
+    summarySheet.setColumnWidth(8, 90);
+    summarySheet.setColumnWidth(9, 80);
 
-    // 棒グラフ（月別合計売上）
-    var dataRowCount = rows.length - 1;
-    var chartRange = summarySheet.getRange(1, 1, dataRowCount, 1);
-    var chartRange2 = summarySheet.getRange(1, 7, dataRowCount, 1);
+    // ===== グラフ（✅ Y軸スケール修正） =====
+    var chartDataRows = monthData.length + 1; // ヘッダー + 12ヶ月
+    var labelRange = summarySheet.getRange(4, 1, chartDataRows, 1);
+    var salesRange = summarySheet.getRange(4, 7, chartDataRows, 1);
+
+    // 最大売上を取得してY軸スケールを設定
+    var maxSales = 0;
+    for (var k = 0; k < monthData.length; k++) {
+      if (monthData[k].totalSales > maxSales) maxSales = monthData[k].totalSales;
+    }
+    var yMax = maxSales > 0 ? Math.ceil(maxSales * 1.2 / 10000) * 10000 : 100000;
 
     var chartBuilder = summarySheet.newChart()
       .setChartType(Charts.ChartType.COLUMN)
-      .addRange(chartRange)
-      .addRange(chartRange2)
-      .setPosition(rows.length + 2, 1, 0, 0)
+      .addRange(labelRange)
+      .addRange(salesRange)
+      .setPosition(dataStartRow + rows.length + 2, 1, 0, 0)
       .setOption('title', '月別合計売上（過去12ヶ月）')
       .setOption('titleTextStyle', { fontSize: 14, bold: true, color: '#1a237e' })
-      .setOption('hAxis', { title: '年月', titleTextStyle: { color: '#424242', bold: true } })
-      .setOption('vAxis', { title: '合計売上（円）', titleTextStyle: { color: '#424242', bold: true }, format: '¥#,##0' })
+      .setOption('hAxis', {
+        title: '年月',
+        titleTextStyle: { color: '#424242', bold: true },
+        slantedText: true,
+        slantedTextAngle: 30
+      })
+      .setOption('vAxis', {
+        title: '合計売上（円）',
+        titleTextStyle: { color: '#424242', bold: true },
+        format: '¥#,##0',
+        minValue: 0,
+        viewWindow: { min: 0, max: yMax }
+      })
       .setOption('colors', ['#3949ab'])
       .setOption('backgroundColor', '#fafafa')
       .setOption('legend', { position: 'none' })
-      .setOption('width', 700)
-      .setOption('height', 400);
+      .setOption('width', 750)
+      .setOption('height', 420);
 
     summarySheet.insertChart(chartBuilder.build());
 
-    return { success: true, message: '集計シートを更新しました（過去12ヶ月 + グラフ）' };
+    return { success: true, message: '集計シートを更新しました（バグ修正版）' };
   } catch (err) {
     return { success: false, message: '集計シート更新エラー: ' + err.message };
   }
@@ -162,7 +283,6 @@ function createDashboard() {
     updateTime.setVerticalAlignment('middle');
     dashboard.setRowHeight(3, 24);
 
-    // 月次サマリー
     dashboard.setRowHeight(4, 16);
     var sectionTitle = dashboard.getRange(5, 1, 1, 8);
     sectionTitle.merge();
@@ -186,7 +306,6 @@ function createDashboard() {
 
     dashboard.setRowHeight(17, 12);
 
-    // 今日詳細
     var todaySection = dashboard.getRange(18, 1, 1, 8);
     todaySection.merge();
     todaySection.setValue('📅  本日詳細（' + todayStats.date + '）');
