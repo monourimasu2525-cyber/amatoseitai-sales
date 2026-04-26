@@ -1,6 +1,6 @@
 // ========== Code.gs ==========
 // メインエントリ・doGet/doPost/onOpen/メニュー関数
-// GitHub Actions + clasp push 自動デプロイ テスト ✅
+// GitHub Actions + clasp push 自動デプロイ テスト ✅ v2
 
 var SPREADSHEET_ID = '17bAyQngDEjoDgqSLLUU5p45HWXomF09bLf_h6FySsjs';
 var BACKUP_FOLDER_NAME = 'あまと整体院_売上バックアップ';
