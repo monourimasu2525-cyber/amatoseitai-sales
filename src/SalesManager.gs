@@ -136,7 +136,7 @@ class SalesManager {
         result.push({
           rowIndex: i + 2,
           date: date.getFullYear() + '/' + (date.getMonth()+1) + '/' + date.getDate(),
-          time: date.getHours() + ':' + String(date.getMinutes()).padStart(2,'0'),
+          time: String(date.getHours()).padStart(2,'0') + ':' + String(date.getMinutes()).padStart(2,'0'),
           type: row[2],
           amount: Number(row[3]) || 0
         });
