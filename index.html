@@ -285,15 +285,6 @@
       </div>
     </div>
 
-    <!-- バックアップ -->
-    <div class="card" style="padding:16px;">
-      <div style="font-size:13px;font-weight:700;margin-bottom:10px;">バックアップ</div>
-      <button id="backupBtn" class="btn-secondary" style="width:100%;padding:11px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;">
-        <span id="backupBtnText">今すぐバックアップ</span>
-        <div id="backupSpinner" class="spinner" style="display:none;width:14px;height:14px;"></div>
-      </button>
-    </div>
-  </div>
 </div>
 
 <!-- ボトムナビ -->
@@ -368,7 +359,7 @@
 </div>
 
 <script>
-const GAS_URL = 'https://amato-api.vercel.app';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycby3931P6ityh6mjGOiBVmLdRSR12lXss9TxYYAxd9XHBYKNJCPhSjBw1_b9cjh2e-_B/exec';
 const SS_URL  = 'https://docs.google.com/spreadsheets/d/17bAyQngDEjoDgqSLLUU5p45HWXomF09bLf_h6FySsjs';
 
 let masterItems = [];
@@ -391,10 +382,6 @@ function showToast(msg, isErr=false) {
 
 async function apiGet(params) {
   const r = await fetch(GAS_URL + '?' + new URLSearchParams(params));
-  return r.json();
-}
-async function apiPost(body) {
-  const r = await fetch(GAS_URL, { method:'POST', body:JSON.stringify(body), headers:{'Content-Type':'application/json'} });
   return r.json();
 }
 
@@ -519,8 +506,7 @@ async function loadInitData() {
   const lsCached = lsGet('initData');
   if (lsCached) applyInitData(lsCached);
   try {
-    // initDataはPOSTで呼ぶ（GAS GETのCORSリダイレクト問題を回避）
-    const d = await apiPost({ action:'initData' });
+    const d = await apiGet({ action:'initData' });
     if (d && d.master && d.todayStats && d.thisMonth && d.prevMonth && d.history) {
       lsSet('initData', d);
       memSet('initData', d);
@@ -628,7 +614,7 @@ async function refreshAll() {
 
 async function quickAdd(type, amount) {
   try {
-    const r = await apiPost({ action:'addSale', type, amount:Number(amount) });
+    const r = await apiGet({ action:'addSale', type, amount:Number(amount) });
     if (r.success) { showToast(`✅ ${type} ${fmt(amount)}`); refreshAll(); }
     else showToast(r.message, true);
   } catch(e) { showToast('登録エラー', true); }
@@ -676,7 +662,7 @@ document.getElementById('addSaleBtn').addEventListener('click', async function()
   this.disabled = true;
   document.getElementById('addSaleSpinner').style.display = 'block';
   try {
-    const r = await apiPost({ action:'addSale', type, amount });
+    const r = await apiGet({ action:'addSale', type, amount });
     if (r.success) {
       showToast(`✅ ${type} ${fmt(amount)}`);
       refreshAll(); loadHistory();
@@ -747,7 +733,7 @@ document.getElementById('confirmEditBtn').addEventListener('click', async functi
   if (!rowIndex||!type||!amount) { showToast('全項目を入力してください',true); return; }
   this.disabled=true;
   try {
-    const r = await apiPost({ action:'editSale', rowIndex, type, amount });
+    const r = await apiGet({ action:'editSale', rowIndex, type, amount });
     if (r.success) {
       showToast('✅ 修正しました');
       document.getElementById('editModal').classList.remove('open');
@@ -762,7 +748,7 @@ document.getElementById('confirmEditBtn').addEventListener('click', async functi
 async function deleteSale(rowIndex, dateStr) {
   if (!confirm(`${dateStr}の売上を削除しますか？`)) return;
   try {
-    const r = await apiPost({ action:'deleteSale', rowIndex });
+    const r = await apiGet({ action:'deleteSale', rowIndex });
     if (r.success) {
       showToast('削除しました');
       refreshAll(); loadHistory();
@@ -1065,7 +1051,7 @@ document.getElementById('addMasterBtn').addEventListener('click', async function
   if (!type||!amount) { showToast('種別名と金額は必須です',true); return; }
   this.disabled=true;
   try {
-    const r = await apiPost({action:'addMaster',type,amount,description:desc});
+    const r = await apiGet({action:'addMaster',type,amount,description:desc});
     if (r.success) {
       showToast('✅ マスタを追加しました');
       ['newMasterType','newMasterAmount','newMasterDesc'].forEach(id => document.getElementById(id).value='');
@@ -1092,7 +1078,7 @@ document.getElementById('confirmEditMasterBtn').addEventListener('click', async 
   if (!rowIndex||!type||!amount) { showToast('全項目を入力してください',true); return; }
   this.disabled=true;
   try {
-    const r = await apiPost({action:'updateMaster',rowIndex,type,amount,description:desc});
+    const r = await apiGet({action:'updateMaster',rowIndex,type,amount,description:desc});
     if (r.success) { showToast('✅ マスタを更新しました'); document.getElementById('editMasterModal').classList.remove('open'); await loadMaster(); }
     else showToast(r.message,true);
   } catch(e) { showToast('マスタ更新エラー',true); }
@@ -1102,7 +1088,7 @@ document.getElementById('confirmEditMasterBtn').addEventListener('click', async 
 async function deleteMaster(rowIndex, type) {
   if (!confirm(`「${type}」を削除しますか？`)) return;
   try {
-    const r = await apiPost({action:'deleteMaster',rowIndex});
+    const r = await apiGet({action:'deleteMaster',rowIndex});
     if (r.success) { showToast('削除しました'); await loadMaster(); }
     else showToast(r.message,true);
   } catch(e) { showToast('マスタ削除エラー',true); }
@@ -1126,7 +1112,7 @@ document.getElementById('genAccBtn').addEventListener('click', async function() 
   document.getElementById('accResult').style.display='none';
   this.disabled=true;
   try {
-    const r = await apiPost({action:'generateAccounting',year,month});
+    const r = await apiGet({action:'generateAccounting',year,month});
     if (r.success) {
       document.getElementById('accResultMsg').textContent = r.message;
       document.getElementById('accSheetLink').href = r.spreadsheetUrl || SS_URL;
@@ -1137,18 +1123,6 @@ document.getElementById('genAccBtn').addEventListener('click', async function() 
   finally { document.getElementById('genAccBtnText').textContent='経理シートを生成する'; document.getElementById('genAccSpinner').style.display='none'; this.disabled=false; }
 });
 
-// ===== バックアップ =====
-document.getElementById('backupBtn').addEventListener('click', async function() {
-  document.getElementById('backupBtnText').textContent='バックアップ中…';
-  document.getElementById('backupSpinner').style.display='block';
-  this.disabled=true;
-  try {
-    const r = await apiPost({action:'backup'});
-    if (r.success) showToast('✅ バックアップ完了');
-    else showToast(r.message,true);
-  } catch(e) { showToast('バックアップエラー',true); }
-  finally { document.getElementById('backupBtnText').textContent='今すぐバックアップ'; document.getElementById('backupSpinner').style.display='none'; this.disabled=false; }
-});
 
 // ===== 初期化（マスタとホームデータを並列取得） =====
 async function init() {
